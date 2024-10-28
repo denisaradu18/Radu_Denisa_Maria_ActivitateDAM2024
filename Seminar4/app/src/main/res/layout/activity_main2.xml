@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="100"
             android:gravity="center"
-            android:textSize="30dp"
+            android:textSize="40dp"
             android:textColor="@color/pink"
             android:text="Adauga Masina" />
     </LinearLayout>
@@ -60,7 +60,7 @@
         android:orientation="horizontal">
 
         <EditText
-            android:id="@+id/editAn"
+            android:id="@+id/tbPret"
             android:layout_width="wrap_content"
             android:layout_height="48dp"
             android:layout_weight="1"
@@ -75,7 +75,7 @@
         android:orientation="horizontal"></LinearLayout>
 
     <EditText
-        android:id="@+id/editMarca"
+        android:id="@+id/tbMarca"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:ems="10"
@@ -92,7 +92,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Este nou" />
+            android:text="Este noua" />
 
         <CheckBox
             android:id="@+id/cbDa"
@@ -101,27 +101,38 @@
             android:layout_weight="1"
             android:text="da" />
 
-        <CheckBox
-            android:id="@+id/cbNu"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="nu" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="210dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="TipCombustibil" />
+
+        <Spinner
+            android:id="@+id/spinner2"
+            android:layout_width="match_parent"
+            android:layout_height="49dp"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:orientation="vertical">
 
         <Button
             android:id="@+id/button3"
-            android:layout_width="392dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="61dp"
             android:text="Adauga" />
-
     </LinearLayout>
 
 </LinearLayout>

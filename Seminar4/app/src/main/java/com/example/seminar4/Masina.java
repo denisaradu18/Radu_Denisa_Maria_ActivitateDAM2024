@@ -1,59 +1,108 @@
 package com.example.seminar4;
 
-public class Masina {
-   private String model;
-   private int anFabricatie;
-    private float km;
+import android.os.Parcel;
+import android.os.Parcelable;
+
+public class Masina implements Parcelable {
+    private String model;
+    private int anFabricatie;
     private float pret;
     private String marca;
     private boolean esteNou;
 
-    public Masina(String model, int anFabricatie, float km, float pret, String marca) {
+    private String tipCombustibil;
+
+    public Masina(String model, int anFabricatie, float pret, String marca, boolean esteNou, String tipCombustibil) {
         this.model = model;
         this.anFabricatie = anFabricatie;
-        this.km = km;
         this.pret = pret;
         this.marca = marca;
+        this.esteNou = esteNou;
+        this.tipCombustibil = tipCombustibil;
     }
+
+    protected Masina(Parcel in) {
+        model = in.readString();
+        anFabricatie = in.readInt();
+        pret = in.readFloat();
+        marca = in.readString();
+        esteNou = in.readByte() != 0;
+        tipCombustibil = in.readString();
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(model);
+        dest.writeInt(anFabricatie);
+        dest.writeFloat(pret);
+        dest.writeString(marca);
+        dest.writeByte((byte) (esteNou ? 1 : 0));
+        dest.writeString(tipCombustibil);
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    public static final Creator<Masina> CREATOR = new Creator<Masina>() {
+        @Override
+        public Masina createFromParcel(Parcel in) {
+            return new Masina(in);
+        }
+
+        @Override
+        public Masina[] newArray(int size) {
+            return new Masina[size];
+        }
+    };
 
     public String getModel() {
         return model;
-    }
-
-    public int getAnFabricatie() {
-        return anFabricatie;
-    }
-
-    public float getKm() {
-        return km;
-    }
-
-    public float getPret() {
-        return pret;
-    }
-
-    public String getMarca() {
-        return marca;
     }
 
     public void setModel(String model) {
         this.model = model;
     }
 
+    public int getAnFabricatie() {
+        return anFabricatie;
+    }
+
     public void setAnFabricatie(int anFabricatie) {
         this.anFabricatie = anFabricatie;
     }
 
-    public void setKm(float km) {
-        this.km = km;
+    public float getPret() {
+        return pret;
     }
 
     public void setPret(float pret) {
         this.pret = pret;
     }
 
+    public String getMarca() {
+        return marca;
+    }
+
     public void setMarca(String marca) {
         this.marca = marca;
+    }
+
+    public boolean isEsteNou() {
+        return esteNou;
+    }
+
+    public void setEsteNou(boolean esteNou) {
+        this.esteNou = esteNou;
+    }
+
+    public String getTipCombustibil() {
+        return tipCombustibil;
+    }
+
+    public void setTipCombustibil(String tipCombustibil) {
+        this.tipCombustibil = tipCombustibil;
     }
 
     @Override
@@ -61,9 +110,10 @@ public class Masina {
         final StringBuilder sb = new StringBuilder("Masina{");
         sb.append("model='").append(model).append('\'');
         sb.append(", anFabricatie=").append(anFabricatie);
-        sb.append(", km=").append(km);
         sb.append(", pret=").append(pret);
         sb.append(", marca='").append(marca).append('\'');
+        sb.append(", esteNou=").append(esteNou);
+        sb.append(", tipCombustibil='").append(tipCombustibil).append('\'');
         sb.append('}');
         return sb.toString();
     }
