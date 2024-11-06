@@ -16,6 +16,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity2 extends AppCompatActivity {
 
     @Override
@@ -28,6 +31,32 @@ public class MainActivity2 extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        Intent it=getIntent();
+        if(it.hasExtra("masina"));
+        {
+            Masina masina=it.getParcelableExtra("masina");
+            EditText modelEt=findViewById(R.id.tbModel);
+            EditText anEt=findViewById(R.id.tbAn);
+            EditText pretEt=findViewById(R.id.tbPret);
+            CheckBox esteNouEt=findViewById(R.id.cbDa);
+
+            modelEt.setText(masina.getModel());
+            anEt.setText(masina.getAnFabricatie());
+            pretEt.setText(masina.getPret());
+            esteNouEt.setChecked(masina.isEsteNou());
+
+
+        }
+        Spinner spin=findViewById(R.id.spinner2);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                MainActivity2.this,
+                R.array.Tip_combustibil,
+                android.R.layout.simple_spinner_item
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        spin.setAdapter(adapter);
 
         Button btn2=findViewById(R.id.button3);
         btn2.setOnClickListener(new View.OnClickListener() {
@@ -51,20 +80,24 @@ public class MainActivity2 extends AppCompatActivity {
                 Boolean esteNoua = cbDa.isChecked();
 
 
-                Spinner spin=findViewById(R.id.spinner2);
                 String alesSpin=(String) spin.getSelectedItem();
+
 
                 Masina masina=new Masina(model, An,pret, marca,esteNoua,alesSpin);
 
+                Toast.makeText(MainActivity2.this, masina.toString(), Toast.LENGTH_LONG).show();
                 Intent it=new Intent();
-                it.putExtra("Masina", masina);
+                it.putExtra("masina", masina);
                 setResult(RESULT_OK,it);
                 finish();
 
             }
 
-
         });
+
+
+
+
 
 
     }

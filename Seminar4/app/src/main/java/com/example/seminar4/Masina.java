@@ -73,7 +73,7 @@ public class Masina implements Parcelable {
         this.anFabricatie = anFabricatie;
     }
 
-    public float getPret() {
+    public int getPret() {
         return pret;
     }
 
