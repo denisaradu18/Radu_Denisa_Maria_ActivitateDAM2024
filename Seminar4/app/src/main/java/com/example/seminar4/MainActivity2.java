@@ -71,7 +71,7 @@ public class MainActivity2 extends AppCompatActivity {
 
                 EditText tbPret=findViewById(R.id.tbPret);
                 String sPret=tbPret.getText().toString();
-                float pret= Float.parseFloat(sPret);
+                int pret= Integer.parseInt(sPret);
 
                 EditText tbMarca=findViewById(R.id.tbMarca);
                 String marca=tbMarca.getText().toString();

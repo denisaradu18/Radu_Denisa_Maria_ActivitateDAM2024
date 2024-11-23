@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Invat</string>
+    <string-array name="tip_obiect">
+        <item>Aliment</item>
+        <item>Bautura</item>
+        <item>Carte</item>
+    </string-array>
+</resources>

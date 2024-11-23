@@ -6,13 +6,13 @@ import android.os.Parcelable;
 public class Masina implements Parcelable {
     private String model;
     private int anFabricatie;
-    private float pret;
+    private int pret;
     private String marca;
     private boolean esteNou;
 
     private String tipCombustibil;
 
-    public Masina(String model, int anFabricatie, float pret, String marca, boolean esteNou, String tipCombustibil) {
+    public Masina(String model, int anFabricatie, int pret, String marca, boolean esteNou, String tipCombustibil) {
         this.model = model;
         this.anFabricatie = anFabricatie;
         this.pret = pret;
@@ -24,7 +24,7 @@ public class Masina implements Parcelable {
     protected Masina(Parcel in) {
         model = in.readString();
         anFabricatie = in.readInt();
-        pret = in.readFloat();
+        pret = in.readInt();
         marca = in.readString();
         esteNou = in.readByte() != 0;
         tipCombustibil = in.readString();
@@ -77,7 +77,7 @@ public class Masina implements Parcelable {
         return pret;
     }
 
-    public void setPret(float pret) {
+    public void setPret(int pret) {
         this.pret = pret;
     }
 
