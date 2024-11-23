@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Recap</string>
+    <string-array name="tip_procesor">
+        <item>Intel</item>
+        <item>AVM</item>
+    </string-array>
+</resources>
