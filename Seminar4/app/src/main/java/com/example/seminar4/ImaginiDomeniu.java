@@ -29,14 +29,6 @@ public class ImaginiDomeniu {
         this.imagine = imagine;
     }
 
-    public String getLink() {
-        return link;
-    }
-
-    public void setLink(String link) {
-        this.link = link;
-    }
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ImaginiDomeniu{");
@@ -45,5 +37,13 @@ public class ImaginiDomeniu {
         sb.append(", link='").append(link).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    public String getLink() {
+        return link;
+    }
+
+    public void setLink(String link) {
+        this.link = link;
     }
 }

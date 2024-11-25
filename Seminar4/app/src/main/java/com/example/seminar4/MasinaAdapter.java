@@ -58,7 +58,7 @@ public class MasinaAdapter extends BaseAdapter {
         esteNouM.setChecked(masina.isEsteNou());
         tipCombustibil.setText(masina.getTipCombustibil());
 
-       return  v;
+        return  v;
 
     }
 }

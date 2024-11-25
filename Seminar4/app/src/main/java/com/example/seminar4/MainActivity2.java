@@ -36,7 +36,6 @@ public class MainActivity2 extends AppCompatActivity {
         if(it.hasExtra("masina"));
         {
             Masina masina=it.getParcelableExtra("masina");
-
             EditText modelEt=findViewById(R.id.tbModel);
             EditText anEt=findViewById(R.id.tbAn);
             EditText pretEt=findViewById(R.id.tbPret);
