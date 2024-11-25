@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
                 Masina masina=data.getParcelableExtra("masina");
                 masini.add(masina);
             }
+
         }
     }
 
