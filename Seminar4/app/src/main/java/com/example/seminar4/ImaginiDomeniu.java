@@ -36,4 +36,14 @@ public class ImaginiDomeniu {
     public void setLink(String link) {
         this.link = link;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ImaginiDomeniu{");
+        sb.append("textAfisat='").append(textAfisat).append('\'');
+        sb.append(", imagine=").append(imagine);
+        sb.append(", link='").append(link).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
 }

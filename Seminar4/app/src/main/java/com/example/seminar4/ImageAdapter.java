@@ -11,19 +11,25 @@ import android.widget.TextView;
 import java.util.List;
 
 public class ImageAdapter extends BaseAdapter {
-    private List<Masina> masini=null;
+    private List<ImaginiDomeniu> masini=null;
     private Context ctx;
     private int resurseLayout;
 
 
+    public ImageAdapter(List<ImaginiDomeniu> masini, Context ctx, int resurseLayout) {
+        this.masini = masini;
+        this.ctx = ctx;
+        this.resurseLayout = resurseLayout;
+    }
+
     @Override
     public int getCount() {
-        return masini.size();
+        return 0;
     }
 
     @Override
     public Object getItem(int position) {
-        return masini.size();
+        return null;
     }
 
     @Override
@@ -32,12 +38,17 @@ public class ImageAdapter extends BaseAdapter {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(int i, View convertView, ViewGroup parent) {
         LayoutInflater inflater=LayoutInflater.from(ctx);
         View v=inflater.inflate(resurseLayout,parent,false);
+
         ImageView imageView=v.findViewById(R.id.imageView2);
         TextView textView=v.findViewById(R.id.textView3);
 
+        ImaginiDomeniu imaginiDomeniu=(ImaginiDomeniu)getItem(i) ;
+
+        imageView.setImageBitmap(imaginiDomeniu.getImagine());
+        textView.setText(imaginiDomeniu.getTextAfisat());
 
 
         return null;

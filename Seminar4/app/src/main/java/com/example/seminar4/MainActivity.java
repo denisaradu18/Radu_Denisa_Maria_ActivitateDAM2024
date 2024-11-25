@@ -18,14 +18,13 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private List<Masina> masini=null;
+    private ArrayList<Masina> masini=new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        masini=new ArrayList<>();
 
         Button btn=findViewById(R.id.adaugamasina);
         btn.setOnClickListener(new View.OnClickListener() {
@@ -43,8 +42,8 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        Button listaAniversari=findViewById(R.id.buttonLV);
-        listaAniversari.setOnClickListener(new View.OnClickListener() {
+        Button listaMasini=findViewById(R.id.buttonLV);
+        listaMasini.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent it=new Intent(getApplicationContext(), ListaMasiniActivity.class);
@@ -63,6 +62,11 @@ public class MainActivity extends AppCompatActivity {
                 masini.add(masina);
             }
         }
+    }
+
+    public void deschideImagini(View view){
+        Intent it=new Intent(getApplicationContext(),ListaMasiniActivity.class);
+        startActivity(it);
     }
 
 }

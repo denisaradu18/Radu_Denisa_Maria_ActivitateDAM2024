@@ -9,6 +9,7 @@
     tools:context=".Afisareimg">
 
     <ListView
+        android:id="@+id/listViewImagini"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 </LinearLayout>
