@@ -18,7 +18,6 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ArrayList<Masina> masini=new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,8 +41,6 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        Button listaMasini=findViewById(R.id.buttonLV);
-        listaMasini.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent it=new Intent(getApplicationContext(), ListaMasiniActivity.class);
@@ -61,13 +58,7 @@ public class MainActivity extends AppCompatActivity {
                 Masina masina=data.getParcelableExtra("masina");
                 masini.add(masina);
             }
-
         }
-    }
-
-    public void deschideImagini(View view){
-        Intent it=new Intent(getApplicationContext(),ListaMasiniActivity.class);
-        startActivity(it);
     }
 
 }
