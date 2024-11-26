@@ -76,6 +76,7 @@ public class Afisareimg extends AppCompatActivity {
                             imaginiDomeniuList.add(new ImaginiDomeniu("Masina 4", imagini.get(3),"https://www.freepik.com/free-photo/man-sitting-car-hood_5790291.htm#fromView=keyword&page=1&position=24&uuid=966e5ade-b413-4470-80ef-ea35a2fd0cce"));
                             imaginiDomeniuList.add(new ImaginiDomeniu("Masina 5", imagini.get(4),"https://www.freepik.com/free-photo/vintage-sedan-car-driving-highway-side-view_6159528.htm#fromView=keyword&page=1&position=2&uuid=1c82cc79-65c9-4fa6-a9ac-4fc6bc287ac6"));
 
+
                             ListView lv=findViewById(R.id.listViewImagini);
                             ImageAdapter adapter=new ImageAdapter(imaginiDomeniuList, getApplicationContext(), R.layout.image_layout);
                             lv.setAdapter(adapter);
