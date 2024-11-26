@@ -18,10 +18,7 @@
         <activity
             android:name=".Afisareimg"
             android:exported="false" />
-        <activity
-            android:name=".AfisareImg"
-            android:exported="false"
-            android:theme="@style/Theme.Seminar4" />
+
         <activity
             android:name=".ListaMasiniActivity"
             android:exported="false" />
