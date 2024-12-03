@@ -77,6 +77,7 @@ public class Afisareimg extends AppCompatActivity {
                             imaginiDomeniuList.add(new ImaginiDomeniu("Masina 5", imagini.get(4), "https://images.pexels.com/photos/358070/pexels-photo-358070.jpeg"));
 
 
+
                             ListView lv=findViewById(R.id.listViewImagini);
                             ImageAdapter adapter=new ImageAdapter(imaginiDomeniuList, getApplicationContext(), R.layout.image_layout);
                             lv.setAdapter(adapter);
