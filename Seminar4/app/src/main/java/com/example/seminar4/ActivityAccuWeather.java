@@ -34,8 +34,7 @@ import java.util.concurrent.Executors;
 public class ActivityAccuWeather extends AppCompatActivity {
 
     String apiKey="KQailOygrfZ1PoqAtzcco7ph9OfNEMOh";
-    String cheieOras;
-    String min;
+    String cheieOras;    String min;
     String max;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
