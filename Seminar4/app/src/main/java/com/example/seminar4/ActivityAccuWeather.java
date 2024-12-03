@@ -56,7 +56,6 @@ public class ActivityAccuWeather extends AppCompatActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_dropdown_item_1line);
         spinnerDays.setAdapter(adapter);
 
-
         Executor executor=Executors.newSingleThreadExecutor();
         Handler handler=new Handler(Looper.myLooper());
 
