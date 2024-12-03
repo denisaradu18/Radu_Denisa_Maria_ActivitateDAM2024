@@ -24,12 +24,12 @@ public class ImageAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return 0;
+        return masini.size();
     }
 
     @Override
-    public Object getItem(int position) {
-        return null;
+    public Object getItem(int i) {
+        return masini.get(i);
     }
 
     @Override
@@ -45,7 +45,7 @@ public class ImageAdapter extends BaseAdapter {
         ImageView imageView=v.findViewById(R.id.imageView2);
         TextView textView=v.findViewById(R.id.textView3);
 
-        ImaginiDomeniu imaginiDomeniu=(ImaginiDomeniu)getItem(i) ;
+        ImaginiDomeniu imaginiDomeniu=(ImaginiDomeniu) getItem(i) ;
 
         imageView.setImageBitmap(imaginiDomeniu.getImagine());
         textView.setText(imaginiDomeniu.getTextAfisat());
