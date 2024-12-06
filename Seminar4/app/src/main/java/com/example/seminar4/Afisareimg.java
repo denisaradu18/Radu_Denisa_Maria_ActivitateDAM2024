@@ -49,7 +49,7 @@ public class Afisareimg extends AppCompatActivity {
 
         Executor executor= Executors.newSingleThreadExecutor();
         Handler handler=new Handler(Looper.myLooper());
-
+//
         List<Bitmap> imagini=new ArrayList<>();
 
         executor.execute(new Runnable() {

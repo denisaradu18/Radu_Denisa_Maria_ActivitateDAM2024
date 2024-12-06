@@ -15,12 +15,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.room.Room;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity2 extends AppCompatActivity {
 
+    BazaDeDate database;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,6 +33,9 @@ public class MainActivity2 extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        database = Room.databaseBuilder(getApplicationContext(), BazaDeDate.class,"masini_db").build();
+
 
         Intent it=getIntent();
         if(it.hasExtra("masina"));
@@ -90,6 +95,9 @@ public class MainActivity2 extends AppCompatActivity {
                 it.putExtra("masina", masina);
                 setResult(RESULT_OK,it);
                 finish();
+
+
+
 
             }
 

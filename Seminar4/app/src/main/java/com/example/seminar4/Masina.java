@@ -3,7 +3,18 @@ package com.example.seminar4;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import androidx.room.Dao;
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
+import org.jetbrains.annotations.NotNull;
+
+@Entity(tableName="Masina")
+
+
 public class Masina implements Parcelable {
+    @PrimaryKey
+    @NotNull
     private String model;
     private int anFabricatie;
     private int pret;
@@ -11,6 +22,7 @@ public class Masina implements Parcelable {
     private boolean esteNou;
 
     private String tipCombustibil;
+
 
     public Masina(String model, int anFabricatie, int pret, String marca, boolean esteNou, String tipCombustibil) {
         this.model = model;
