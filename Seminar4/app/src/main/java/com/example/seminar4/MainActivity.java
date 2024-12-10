@@ -60,6 +60,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        Button activitateFavorite=findViewById(R.id.button);
+        activitateFavorite.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+
     }
 
     @Override

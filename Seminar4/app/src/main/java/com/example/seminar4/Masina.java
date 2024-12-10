@@ -117,6 +117,14 @@ public class Masina implements Parcelable {
         this.tipCombustibil = tipCombustibil;
     }
 
+    public String getKey(){
+        StringBuilder sb=new StringBuilder();
+        sb.append(this.model);
+        sb.append("-");
+        sb.append(this.anFabricatie);
+        return sb.toString();
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Masina{");

@@ -3,6 +3,7 @@ package com.example.seminar4;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
+import androidx.room.Update;
 
 import java.util.List;
 
@@ -16,5 +17,8 @@ public interface DaoMasina {
 
     @Query("SELECT * FROM Masina")
     List<Masina> getListaMasini();
+
+    @Update
+    void update(Masina masini);
 
 }

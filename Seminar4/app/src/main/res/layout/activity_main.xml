@@ -45,12 +45,14 @@
         android:id="@+id/button2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="52dp"
+        android:layout_marginTop="379dp"
         android:layout_marginEnd="20dp"
+        android:layout_marginBottom="94dp"
         android:onClick="deschideImagini"
         android:text="Afisare Imagini"
+        app:layout_constraintBottom_toTopOf="@+id/button"
         app:layout_constraintEnd_toEndOf="@+id/buttonLV"
-        app:layout_constraintTop_toBottomOf="@+id/buttonLV" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/buttonActivitate"
@@ -59,6 +61,17 @@
         android:layout_marginTop="17dp"
         android:text="ActivtateNoua"
         app:layout_constraintEnd_toEndOf="@+id/button2"
+        app:layout_constraintTop_toBottomOf="@+id/button2" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="170dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="107dp"
+        android:layout_marginBottom="164dp"
+        android:text="Masini favorite"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button2" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

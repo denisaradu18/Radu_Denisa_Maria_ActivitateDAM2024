@@ -1,6 +1,7 @@
 package com.example.seminar4;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -91,8 +92,12 @@ public class ListaMasiniActivity extends AppCompatActivity {
                 @Override
                 public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
 
-                    masini.remove(i);
-                    adapter.notifyDataSetChanged();
+                    //masini.remove(i);
+                    //adapter.notifyDataSetChanged();
+                    SharedPreferences sp=getSharedPreferences("obiecte", MODE_PRIVATE);
+                    SharedPreferences.Editor editor=sp.edit();
+                    editor.putString(masini.get(i).getKey(), masini.get(i).toString());
+                    editor.commit();
                     return false;
                 }
             });
@@ -106,8 +111,25 @@ public class ListaMasiniActivity extends AppCompatActivity {
 
         if(resultCode==RESULT_OK && requestCode ==200)
         {
-            masini.set(idModificat, data.getParcelableExtra("masini"));
-            adapter.notifyDataSetChanged();
+            Masina masinaModificata=data.getParcelableExtra("masina");
+
+            Executor executor =Executors.newSingleThreadExecutor();
+            Handler handler=new Handler(Looper.myLooper());
+
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    database.getDaoObject().update(masinaModificata);
+
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            masini.set(idModificat, masinaModificata);
+                            adapter.notifyDataSetChanged();
+                        }
+                    });
+                }
+            });
         }
     }
 }
