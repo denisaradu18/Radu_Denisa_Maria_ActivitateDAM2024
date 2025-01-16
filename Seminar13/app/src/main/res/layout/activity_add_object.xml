@@ -1,0 +1,39 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:id="@+id/main"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/et_book_title"
+        android:layout_width="match_parent"
+        android:layout_height="49dp"
+        android:hint="Titlul cărții" />
+
+    <EditText
+        android:id="@+id/et_book_author"
+        android:layout_width="match_parent"
+        android:layout_height="49dp"
+        android:hint="Autorul cărții" />
+
+    <EditText
+        android:id="@+id/et_book_year"
+        android:layout_width="match_parent"
+        android:layout_height="49dp"
+        android:hint="Anul publicării"
+        android:inputType="number" />
+
+    <CheckBox
+        android:id="@+id/cb_available_online"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Disponibil online" />
+
+    <Button
+        android:id="@+id/btn_add_book"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Adaugă Carte" />
+</LinearLayout>
