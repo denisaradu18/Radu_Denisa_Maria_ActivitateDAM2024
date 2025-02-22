@@ -32,54 +32,49 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d2613a7f-03bc-423b-a879-97bc27956999" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/app/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/build.gradle.kts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/proguard-rules.pro" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/androidTest/java/com/example/invat/ExampleInstrumentedTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/example/invat/AdaugaObiect.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/example/invat/ListaObiecte.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/example/invat/MainActivity.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/example/invat/MainActivity2.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/java/com/example/invat/Obiect.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_launcher_background.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/drawable/ic_launcher_foreground.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_adauga_obiect.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_lista_obiecte.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_main.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/layout/activity_main2.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-hdpi/ic_launcher.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-hdpi/ic_launcher_round.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-mdpi/ic_launcher.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-mdpi/ic_launcher_round.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-xhdpi/ic_launcher.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-xhdpi/ic_launcher_round.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.webp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/values-night/themes.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/values/colors.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/values/strings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/values/themes.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/xml/backup_rules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/main/res/xml/data_extraction_rules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/src/test/java/com/example/invat/ExampleUnitTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Recap/app/src/main/java/com/example/recap/ActivitateAdaugareCalculator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Recap/app/src/main/java/com/example/recap/Calculator.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Recap/app/src/main/java/com/example/recap/ListaCalculatoare.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Recap/app/src/main/res/layout/activity_activitate_adaugare_calculator.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Recap/app/src/main/res/layout/activity_lista_calculatoare.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Recapitulare/app/src/main/java/com/example/recapitulare/AdaugaActivity.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Recapitulare/app/src/main/java/com/example/recapitulare/ListaStud.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Recapitulare/app/src/main/java/com/example/recapitulare/Student.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Recapitulare/app/src/main/res/layout/activity_adauga.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../Recapitulare/app/src/main/res/layout/activity_main2.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Seminar4/app/src/main/java/com/example/seminar4/MainActivity2.java" beforeDir="false" afterPath="$PROJECT_DIR$/../Seminar4/app/src/main/java/com/example/seminar4/MainActivity2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Seminar4/app/src/main/java/com/example/seminar4/Masina.java" beforeDir="false" afterPath="$PROJECT_DIR$/../Seminar4/app/src/main/java/com/example/seminar4/Masina.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Book/app/src/main/java/com/example/book/Book.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Book/app/src/main/java/com/example/book/Dao.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Book/app/src/main/java/com/example/book/DataBase.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Book/app/src/main/java/com/example/book/DataBaseBook.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Book/app/src/main/java/com/example/book/SharedPreferences.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Book/app/src/main/java/com/example/book/Xml.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Book/app/src/main/res/layout/activity_data_base.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Book/app/src/main/res/layout/activity_shared_preferences.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Book/app/src/main/res/layout/activity_xml.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/java/com/example/carte/Carte.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/java/com/example/carte/CarteAPI.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/java/com/example/carte/DAO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/java/com/example/carte/DataBaseCarti.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/java/com/example/carte/ImaginiDomeniu.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/java/com/example/carte/ListaCarti.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/java/com/example/carte/ListaImagini.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/java/com/example/carte/MainActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/res/layout/activity_carte_api.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/res/layout/activity_lista_carti.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/res/layout/activity_lista_imagini.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/res/layout/activity_main.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Carte/app/src/main/res/layout/item_row.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Quotes/app/src/main/java/com/example/quotes/APIActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Quotes/app/src/main/java/com/example/quotes/AdaugaActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Quotes/app/src/main/java/com/example/quotes/Citat.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Quotes/app/src/main/java/com/example/quotes/Dao.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Quotes/app/src/main/java/com/example/quotes/DataBase.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Quotes/app/src/main/java/com/example/quotes/ListaActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Quotes/app/src/main/java/com/example/quotes/SharedPreferenceActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Quotes/app/src/main/res/layout/activity_adauga.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Quotes/app/src/main/res/layout/activity_apiactivity.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Quotes/app/src/main/res/layout/activity_lista.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Quotes/app/src/main/res/layout/activity_shared_preference.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Recapitulam/app/src/main/java/com/example/recapitulam/Cursa.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Recapitulam/app/src/main/java/com/example/recapitulam/DAO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Recapitulam/app/src/main/java/com/example/recapitulam/DataBaseCursa.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Recapitulare_test_2/app/src/main/java/com/example/recapitulare_test_2/AdaugaActivity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Recapitulare_test_2/app/src/main/java/com/example/recapitulare_test_2/DAO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Recapitulare_test_2/app/src/main/java/com/example/recapitulare_test_2/DataBaseOrase.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Recapitulare_test_2/app/src/main/java/com/example/recapitulare_test_2/ListaOrase.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Recapitulare_test_2/app/src/main/java/com/example/recapitulare_test_2/Oras.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Recapitulare_test_2/app/src/main/res/layout/activity_adauga.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Recapitulare_test_2/app/src/main/res/layout/activity_lista_orase.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -172,6 +167,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.cidr.known.project.marker": "true",
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "android.gradle.sync.needed": "true",
     "cf.first.check.clang-format": "false",
     "cidr.known.project.marker": "true",
     "git-widget-placeholder": "main",

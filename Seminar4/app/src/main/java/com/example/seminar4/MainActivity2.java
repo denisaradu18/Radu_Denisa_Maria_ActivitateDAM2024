@@ -12,10 +12,14 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.arch.core.executor.ArchTaskExecutor;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.room.Room;
+
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +50,8 @@ public class MainActivity2 extends AppCompatActivity {
             EditText pretEt=findViewById(R.id.tbPret);
             CheckBox esteNouEt=findViewById(R.id.cbDa);
 
+
+            assert masina != null;
             modelEt.setText(masina.getModel());
             anEt.setText(masina.getAnFabricatie());
             pretEt.setText(masina.getPret());
@@ -84,31 +90,29 @@ public class MainActivity2 extends AppCompatActivity {
                 CheckBox cbDa = findViewById(R.id.cbDa);
                 Boolean esteNoua = cbDa.isChecked();
 
+                CheckBox estedidpOnline = findViewById(R.id.dispOnlinecb);
+                Boolean esteBifat = estedidpOnline.isChecked();
+
 
                 String alesSpin=(String) spin.getSelectedItem();
 
 
                 Masina masina=new Masina(model, An,pret, marca,esteNoua,alesSpin);
 
+                if (esteBifat) {
+                    FirebaseDatabase database = FirebaseDatabase.getInstance();
+                    DatabaseReference ref = database.getReference("masini");
+                    ref.push().setValue(masina)
+                            .addOnSuccessListener(aVoid -> Toast.makeText(MainActivity2.this, "Obiect salvat în Firebase!", Toast.LENGTH_SHORT).show())
+                            .addOnFailureListener(e -> Toast.makeText(MainActivity2.this, "Eroare" + e.getMessage(), Toast.LENGTH_SHORT).show());
+                }
                 Toast.makeText(MainActivity2.this, masina.toString(), Toast.LENGTH_LONG).show();
                 Intent it=new Intent();
                 it.putExtra("masina", masina);
                 setResult(RESULT_OK,it);
                 finish();
-
-
-
-
             }
 
         });
-
-
-
-
-
-
     }
-
-
 }
