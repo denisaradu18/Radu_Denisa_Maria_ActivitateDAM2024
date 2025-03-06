@@ -1,0 +1,38 @@
+<resources>
+    <string name="app_name">Aplicatie Licenta</string>
+    <string name="add_new_item_tooltip">Click to add a new item</string>
+    <string name="search_icon">Search icon</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="camera_icon">Camera icon</string>
+    <string name="add_photo_icon">Add photo icon</string>
+
+    <string name="add_up_to_10_images">Add up to 10 images</string>
+    <string name="title_label">Title</string>
+    <string name="title_hint">Product Title</string>
+    <string name="description_label">Description</string>
+    <string name="description_hint">Write a short description</string>
+    <string name="expiration_date_label">Expiration Date</string>
+    <string name="quantity_label">Quantity</string>
+    <string name="other_label">Other</string>
+    <string name="pick_up_times_label">Pick up times</string>
+    <string name="pick_up_times_hint">e.g. 4 days</string>
+    <string name="your_pick_up_instructions_label">Your pick up instructions</string>
+    <string name="your_pick_up_instructions_hint">Additional details about picking up</string>
+    <string name="your_location_label">Your location</string>
+    <string name="list_for_label">List for</string>
+    <string name="post_label">Post</string>
+    <string name="add_new_item">Adaugă element nou</string>
+
+    <string-array name="spinner_days_options">
+        <item>1 </item>
+        <item>2 </item>
+        <item>3 </item>
+        <item>4 </item>
+        <item>5 </item>
+        <item>6 </item>
+        <item>7 </item>
+        <item>14 </item>
+        <item>30 </item>
+    </string-array>
+</resources>

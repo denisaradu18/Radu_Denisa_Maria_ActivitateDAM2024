@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "434928296747",
+    "project_id": "dam1838",
+    "storage_bucket": "dam1838.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:434928296747:android:038a90ed3c782728b11b6e",
+        "android_client_info": {
+          "package_name": "com.example.seminar13"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAt0bohqQ5-Ms8TH1o5ZDLu1QZvJOHZQeE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
