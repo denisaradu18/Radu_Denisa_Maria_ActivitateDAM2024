@@ -1,17 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".AccountFragment">
+    android:orientation="vertical"
+    android:gravity="center_horizontal"
+    android:background="@android:color/white">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <!-- Toolbar -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Account Fragment"
-        android:gravity="center"
-        android:textSize="30sp"
-        android:textColor="@color/green"/>
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:title="Account"
+        app:titleCentered="true"
+        app:titleTextColor="@android:color/white"/>
 
-</FrameLayout>
+    <!-- Spațiu între toolbar și butoane -->
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="30dp"/>
+
+    <!-- Container pentru butoane -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:gravity="center">
+
+        <!-- My Listings -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_my_listings"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="My Listings"
+            android:textAllCaps="false"
+            app:icon="@drawable/ic_listings"
+            app:iconGravity="textStart"
+            app:iconPadding="10dp"
+            android:backgroundTint="@color/white"
+            app:strokeColor="@color/green"
+            app:strokeWidth="2.0dp"
+            android:textColor="@color/green"
+            android:paddingVertical="12dp"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Favorite Listings -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_favorites"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Favorite Listings"
+            android:textAllCaps="false"
+            app:icon="@drawable/ic_star_filled"
+            app:iconGravity="textStart"
+            app:iconPadding="10dp"
+            android:backgroundTint="@color/white"
+            app:strokeColor="@color/green"
+            app:strokeWidth="2.0dp"
+            android:textColor="@color/green"
+            android:paddingVertical="12dp"
+            android:layout_marginBottom="12dp"/>
+    </LinearLayout>
+
+</LinearLayout>

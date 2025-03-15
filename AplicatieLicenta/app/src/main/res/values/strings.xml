@@ -7,6 +7,16 @@
     <string name="camera_icon">Camera icon</string>
     <string name="add_photo_icon">Add photo icon</string>
 
+    <string name="choose_product_type">Choose Product Type</string>
+    <string name="food_option">Food</string>
+    <string name="food_option_description">Give away anything you would eat yourself</string>
+    <string name="non_food_option">Non-Food</string>
+    <string name="non_food_option_description">Give away any item in good condition that you no longer use</string>
+
+    <string name="favorites">Favorites</string>
+    <string name="my_listings">My Listings</string>
+    <string name="logout">Logout</string>
+
     <string name="add_up_to_10_images">Add up to 10 images</string>
     <string name="title_label">Title</string>
     <string name="title_hint">Product Title</string>

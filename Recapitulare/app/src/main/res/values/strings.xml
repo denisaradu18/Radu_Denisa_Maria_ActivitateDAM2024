@@ -1,9 +1,0 @@
-<resources>
-    <string name="app_name">Recapitulare</string>
-    <string name="mesaj">Activitatea a fost afisata</string>
-    <string-array name="nivel_studiu">
-        <item>Licenta</item>
-        <item>Mastrer</item>
-        <item>Doctorat</item>
-    </string-array>
-</resources>

@@ -27,9 +27,10 @@
                 android:id="@+id/btn_back"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_more_vert"
+                android:src="@drawable/ic_arrow_back"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Back button"/>
+
 
             <TextView
                 android:layout_width="0dp"
@@ -84,9 +85,16 @@
                 android:contentDescription="Add photo button"/>
         </FrameLayout>
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewImages"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:orientation="horizontal"/>
+
+
         <!-- Title -->
         <TextView
-            android:id="@+id/tv_add_images"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Title"
@@ -141,117 +149,7 @@
             android:drawableEnd="@drawable/ic_calendar"
             android:layout_marginBottom="16dp"/>
 
-        <!-- Quantity -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Quantity"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp"/>
-
-        <!-- Quantity Buttons -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="16dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_quantity_1"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="1"
-                android:layout_marginEnd="4dp"
-                app:cornerRadius="20dp"/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_quantity_2"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="2"
-                android:layout_marginEnd="4dp"
-                app:cornerRadius="20dp"/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_quantity_3"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="3"
-                android:layout_marginEnd="4dp"
-                app:cornerRadius="20dp"/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_quantity_4"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="4"
-                android:layout_marginEnd="4dp"
-                app:cornerRadius="20dp"/>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_quantity_5"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="5+"
-                app:cornerRadius="20dp"/>
-        </LinearLayout>
-
-        <!-- Green Button for "Other" -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_quantity_other"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:text="Other"
-            android:textColor="@android:color/white"
-            app:backgroundTint="@color/green"
-            app:cornerRadius="20dp"
-            android:layout_marginBottom="16dp"/>
-
-        <!-- Pick up times -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Pick up times"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp"/>
-
-        <EditText
-            android:id="@+id/et_pickup_times"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="When is your food available for pickup?"
-            android:background="@drawable/edit_text_background"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp"/>
-
-        <!-- Your pick up instructions -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Your pick up instructions"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp"/>
-
-        <EditText
-            android:id="@+id/et_pickup_instructions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="How should people pick up your food?"
-            android:background="@drawable/edit_text_background"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp"/>
-
-        <!-- Your location -->
+        <!-- Location Selection -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -280,33 +178,50 @@
                 android:contentDescription="Location marker"/>
         </FrameLayout>
 
-        <!-- List for X days -->
-        <LinearLayout
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_select_location"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Select Location"
+            android:textColor="@android:color/white"
+            app:backgroundTint="@color/green"
+            app:cornerRadius="24dp"
+            android:layout_marginBottom="16dp"/>
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pickup Times"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp"/>
+
+        <EditText
+            android:id="@+id/et_pickup_times"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="16dp">
+            android:hint="Enter pickup times"
+            android:background="@drawable/edit_text_background"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="List for"
-                android:textSize="14sp"/>
 
-            <Spinner
-                android:id="@+id/spinner_days"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pickup Instructions"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="days"
-                android:textSize="14sp"
-                android:layout_marginStart="8dp"/>
-        </LinearLayout>
+        <EditText
+            android:id="@+id/et_pickup_instructions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter pickup instructions"
+            android:background="@drawable/edit_text_background"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp"/>
+
 
         <!-- Post Button -->
         <com.google.android.material.button.MaterialButton

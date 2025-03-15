@@ -19,7 +19,8 @@
         android:layout_gravity="bottom"
         android:background="@color/green"
         app:fabCradleMargin="10dp"
-        app:fabCradleRoundedCornerRadius="50dp">
+        app:fabCradleRoundedCornerRadius="50dp"
+        app:hideOnScroll="true">
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:layout_width="wrap_content"

@@ -8,6 +8,8 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Base64;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,10 +22,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.Manifest;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.example.aplicatielicenta.databinding.ActivityAddFoodBinding;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -33,23 +41,56 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.firestore.FirebaseFirestore;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private LatLng selectedLocation;
     private ActivityAddFoodBinding binding;
 
     private static final int REQUEST_LOCATION_PERMISSION = 1001;
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     private static final int REQUEST_PICK_IMAGE = 2;
+    private static final int REQUEST_LOCATION_PICKER = 3;
 
     private List<MaterialButton> quantityButtons = new ArrayList<>();
-    private int selectedQuantity = 1;
+
     private boolean imageLoaded = false;
+    private LatLng selectedLatLng = null; // Variabilă pentru locația selectată
+
+    private Uri selectedImageUri = null;
+
+    // URL-ul API pentru încărcare în Cloudinary
+    private static final String CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/du55ivt1v/image/upload";
+
+    private static final String UPLOAD_PRESET = "Photos";
+
+    private List<Uri> selectedImages = new ArrayList<>();
+    private ImageAdapter imageAdapter;
+    private FusedLocationProviderClient fusedLocationProviderClient;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,10 +98,24 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         binding = ActivityAddFoodBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        selectedImages = new ArrayList<>();
+        imageAdapter = new ImageAdapter(this, selectedImages, this::removeImage);
+
+        // Configurăm RecyclerView
+        binding.recyclerViewImages.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        binding.recyclerViewImages.setAdapter(imageAdapter);
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
         // Initialize back button
         binding.btnBack.setOnClickListener(v -> finish());
 
-        // Initialize map fragment
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.CAMERA}, 1002);
+        }
+
         SupportMapFragment mapFragment = (SupportMapFragment)
                 getSupportFragmentManager().findFragmentById(R.id.map_container);
         if (mapFragment != null) {
@@ -70,113 +125,32 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         // Initialize date picker for expiration date
         binding.etExpirationDate.setOnClickListener(v -> showDatePickerDialog());
 
-        // Initialize quantity buttons
-        setupQuantityButtons();
-
-        // Setup "Other" button
-        binding.btnQuantityOther.setOnClickListener(v -> showCustomQuantityDialog());
-
-        // Initialize Spinner for listing days
-        setupDaysSpinner();
-
         // Setup camera/gallery functionality
         setupImageCapture();
 
+
         // Setup Post button
-        binding.btnPost.setOnClickListener(v -> validateAndPost());
-    }
 
-    private void setupQuantityButtons() {
-        // Add all quantity buttons to list for easier management
-        quantityButtons.add(binding.btnQuantity1);
-        quantityButtons.add(binding.btnQuantity2);
-        quantityButtons.add(binding.btnQuantity3);
-        quantityButtons.add(binding.btnQuantity4);
-        quantityButtons.add(binding.btnQuantity5);
-
-        // Set default selection
-        updateQuantitySelection(0); // Select first button (quantity 1)
-
-        // Set click listeners for all quantity buttons
-        for (int i = 0; i < quantityButtons.size(); i++) {
-            final int position = i;
-            quantityButtons.get(i).setOnClickListener(v -> updateQuantitySelection(position));
-        }
-    }
-
-    private void updateQuantitySelection(int position) {
-        // Update the selected quantity
-        selectedQuantity = position + 1;
-        if (position == 4) { // For 5+ button
-            selectedQuantity = 5;
-        }
-
-        // Update UI to show selection
-        for (int i = 0; i < quantityButtons.size(); i++) {
-            MaterialButton button = quantityButtons.get(i);
-            if (i == position) {
-                // Selected button style
-                button.setStrokeWidth(0);
-                button.setBackgroundColor(getResources().getColor(R.color.green));
-                button.setTextColor(getResources().getColor(android.R.color.white));
+        binding.btnSelectLocation.setOnClickListener(v -> {
+            if (selectedLocation == null) {
+                // Deschide activitatea de selectare locație dacă nu ai deja o locație
+                Intent intent = new Intent(AddFoodActivity.this, LocationPickerActivity.class);
+                startActivityForResult(intent, REQUEST_LOCATION_PICKER);
             } else {
-                // Unselected button style
-                button.setStrokeWidth(getResources().getDimensionPixelSize(R.dimen.button_stroke_width));
-                button.setStrokeColor(getColorStateList(R.color.button_stroke_color));
-                button.setBackgroundColor(getResources().getColor(android.R.color.white));
-                button.setTextColor(getResources().getColor(R.color.button_text_color));
+                // Trimite locația înapoi dacă deja ai selectat-o
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra("latitude", selectedLocation.latitude);
+                resultIntent.putExtra("longitude", selectedLocation.longitude);
+                setResult(RESULT_OK, resultIntent);
+                finish();
             }
-        }
-    }
+        });
 
-    private void showCustomQuantityDialog() {
-        // Create a dialog for custom quantity input
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        View view = LayoutInflater.from(this).inflate(R.layout.dialog_custom_quantity, null);
-        EditText etCustomQuantity = view.findViewById(R.id.et_custom_quantity);
+        binding.btnPost.setOnClickListener(v -> {
+            Log.d("DEBUG", "Butonul Post a fost apăsat");
+            validateAndPost();
+        });
 
-        builder.setTitle("Enter custom quantity")
-                .setView(view)
-                .setPositiveButton("OK", (dialog, which) -> {
-                    String quantityStr = etCustomQuantity.getText().toString().trim();
-                    if (!quantityStr.isEmpty()) {
-                        try {
-                            int customQty = Integer.parseInt(quantityStr);
-                            if (customQty > 0) {
-                                selectedQuantity = customQty;
-                                // Deselect all quantity buttons
-                                for (MaterialButton button : quantityButtons) {
-                                    button.setStrokeWidth(getResources().getDimensionPixelSize(R.dimen.button_stroke_width));
-                                    button.setStrokeColor(getColorStateList(R.color.button_stroke_color));
-                                    button.setBackgroundColor(getResources().getColor(android.R.color.white));
-                                    button.setTextColor(getResources().getColor(R.color.button_text_color));
-                                }
-
-                                // Highlight the "Other" button
-                                binding.btnQuantityOther.setBackgroundColor(getResources().getColor(R.color.green));
-                                binding.btnQuantityOther.setText("Other: " + customQty);
-                                binding.btnQuantityOther.setTextColor(getResources().getColor(android.R.color.white));
-                            } else {
-                                Toast.makeText(AddFoodActivity.this, "Please enter a positive number", Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (NumberFormatException e) {
-                            Toast.makeText(AddFoodActivity.this, "Please enter a valid number", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                })
-                .setNegativeButton("Cancel", null)
-                .create()
-                .show();
-    }
-
-    private void setupDaysSpinner() {
-        Spinner spinnerDays = binding.spinnerDays;
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
-                this,
-                R.array.spinner_days_options,
-                android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerDays.setAdapter(adapter);
     }
 
     private void setupImageCapture() {
@@ -187,33 +161,36 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         binding.fabAddPhoto.setOnClickListener(v -> showImageSelectionOptions());
     }
 
-    private void showImageSelectionOptions() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Select Image Source")
-                .setItems(new CharSequence[]{"Camera", "Gallery"}, (dialog, which) -> {
-                    if (which == 0) {
-                        // Camera option
-                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-                            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
-                        } else {
-                            Toast.makeText(this, "No camera app available", Toast.LENGTH_SHORT).show();
-                        }
-                    } else {
-                        // Gallery option
-                        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                        intent.setType("image/*");
-                        Intent chooser = Intent.createChooser(intent, "Select an image");
-                        if (chooser.resolveActivity(getPackageManager()) != null) {
-                            startActivityForResult(chooser, REQUEST_PICK_IMAGE);
-                        } else {
-                            Toast.makeText(this, "No gallery app installed", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                })
-                .create()
-                .show();
+    private void removeImage(int position) {
+        if (position >= 0 && position < selectedImages.size()) {
+            selectedImages.remove(position);
+            imageAdapter.notifyDataSetChanged(); // Actualizăm RecyclerView-ul după ștergere
+        }
     }
+
+
+    private void showImageSelectionOptions() {
+    AlertDialog.Builder builder = new AlertDialog.Builder(this);
+    builder.setTitle("Select Image Source")
+            .setItems(new CharSequence[]{"Camera", "Gallery"}, (dialog, which) -> {
+                if (which == 0) {
+                    // Deschide camera
+                    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                    if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+                        startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+                    } else {
+                        Toast.makeText(this, "No camera app available", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // Selectează din galerie
+                    Intent intent = new Intent(Intent.ACTION_PICK);
+                    intent.setType("image/*");
+                    startActivityForResult(intent, REQUEST_PICK_IMAGE);
+                }
+            })
+            .create()
+            .show();
+}
 
     private void showDatePickerDialog() {
         final Calendar calendar = Calendar.getInstance();
@@ -235,102 +212,103 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         datePickerDialog.show();
     }
 
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if ((requestCode == REQUEST_PICK_IMAGE || requestCode == REQUEST_IMAGE_CAPTURE)
-                && resultCode == RESULT_OK && data != null) {
 
-            // Get the main photo container
-            FrameLayout photoContainer = binding.getRoot().findViewById(R.id.photo_container);
+        if (resultCode == RESULT_OK && data != null) {
 
-            // Hide the camera icon and show the actual image
-            binding.ivCamera.setVisibility(View.GONE);
+            // ✅ Dacă utilizatorul a selectat o locație
+            if (requestCode == REQUEST_LOCATION_PICKER) {
+                double latitude = data.getDoubleExtra("latitude", 0.0);
+                double longitude = data.getDoubleExtra("longitude", 0.0);
 
-            // Create an ImageView with match_parent dimensions
-            ImageView imageView = new ImageView(this);
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT);
-            params.gravity = Gravity.CENTER; // Centrează imaginea în container
-            imageView.setLayoutParams(params);
+                if (latitude != 0.0 && longitude != 0.0) {
+                    selectedLatLng = new LatLng(latitude, longitude);
 
-            if (requestCode == REQUEST_PICK_IMAGE) {
-                Uri imageUri = data.getData();
-                try {
-                    // Load and display the selected image
-                    imageView.setImageURI(imageUri);
-
-                    // Remove any existing loaded images and add the new one
-                    if (imageLoaded) {
-                        // Remove all views except the camera icon and FAB
-                        int childCount = photoContainer.getChildCount();
-                        for (int i = childCount - 1; i >= 0; i--) {
-                            View child = photoContainer.getChildAt(i);
-                            if (child != binding.ivCamera && child != binding.fabAddPhoto) {
-                                photoContainer.removeView(child);
-                            }
-                        }
+                    if (mMap != null) {
+                        mMap.clear();
+                        mMap.addMarker(new MarkerOptions().position(selectedLatLng).title("Selected Location"));
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(selectedLatLng, 15f));
                     }
 
-                    photoContainer.addView(imageView, 0); // Add at the bottom of the stack
-                    imageLoaded = true;
-
-                    // Make sure the add photo text reflects the current state
-                    TextView addImagesText = binding.getRoot().findViewById(R.id.tv_add_images);
-                    if (addImagesText != null) {
-                        addImagesText.setText("1 of 10 photos added");
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Toast.makeText(this, "Failed to load image", Toast.LENGTH_SHORT).show();
-                }
-            } else if (requestCode == REQUEST_IMAGE_CAPTURE) {
-                Bundle extras = data.getExtras();
-                Bitmap imageBitmap = (Bitmap) extras.get("data");
-
-                // Display the captured image
-                imageView.setImageBitmap(imageBitmap);
-
-                // Remove any existing loaded images and add the new one
-                if (imageLoaded) {
-                    // Remove all views except the camera icon and FAB
-                    int childCount = photoContainer.getChildCount();
-                    for (int i = childCount - 1; i >= 0; i--) {
-                        View child = photoContainer.getChildAt(i);
-                        if (child != binding.ivCamera && child != binding.fabAddPhoto) {
-                            photoContainer.removeView(child);
-                        }
-                    }
-                }
-
-                photoContainer.addView(imageView, 0); // Add at the bottom of the stack
-                imageLoaded = true;
-
-                // Make sure the add photo text reflects the current state
-                TextView addImagesText = binding.getRoot().findViewById(R.id.tv_add_images);
-                if (addImagesText != null) {
-                    addImagesText.setText("1 of 10 photos added");
+                    binding.btnSelectLocation.setText("Location Selected");
+                } else {
+                    Toast.makeText(this, "Invalid location received!", Toast.LENGTH_SHORT).show();
                 }
             }
+
+            // ✅ Dacă utilizatorul a selectat o imagine din galerie
+            else if (requestCode == REQUEST_PICK_IMAGE) {
+                Uri imageUri = data.getData();
+                if (imageUri != null) {
+                    selectedImageUri = imageUri;
+                    binding.ivCamera.setImageURI(selectedImageUri);
+                } else {
+                    Toast.makeText(this, "Failed to get image from gallery", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            // ✅ Dacă utilizatorul a făcut o fotografie cu camera
+            else if (requestCode == REQUEST_IMAGE_CAPTURE) {
+                if (data.getExtras() != null) {
+                    Bitmap imageBitmap = (Bitmap) data.getExtras().get("data");
+                    if (imageBitmap != null) {
+                        selectedImageUri = getImageUriFromBitmap(imageBitmap);
+                        if (selectedImageUri != null) {
+                            binding.ivCamera.setImageURI(selectedImageUri);
+                        } else {
+                            Toast.makeText(this, "Error converting image to URI", Toast.LENGTH_SHORT).show();
+                        }
+                    } else {
+                        Toast.makeText(this, "Failed to capture image", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(this, "Camera returned no data", Toast.LENGTH_SHORT).show();
+                }
+            }
+        } else {
+            Toast.makeText(this, "Operation canceled or failed", Toast.LENGTH_SHORT).show();
         }
     }
+
+
+    // Convertim un Bitmap într-un URI pentru a-l putea salva
+    private Uri getImageUriFromBitmap(Bitmap bitmap) {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+
+        String path = MediaStore.Images.Media.insertImage(getContentResolver(), bitmap, "CapturedImage", null);
+        if (path == null) {
+            return null;
+        }
+
+        return Uri.parse(path);
+    }
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        enableMyLocation();
-        // Set initial location (e.g., Bucharest)
-        LatLng bucharest = new LatLng(44.4268, 26.1025);
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(bucharest, 12f));
-        mMap.addMarker(new MarkerOptions().position(bucharest).title("Bucharest"));
 
-        // Let user tap to set location
+        // Verifică permisiunea și obține locația curentă
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            mMap.setMyLocationEnabled(true);
+
+            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, location -> {
+                if (location != null) {
+                    LatLng currentLocation = new LatLng(location.getLatitude(), location.getLongitude());
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocation, 15f));
+                }
+            });
+        }
+
+        // Permite utilizatorului să selecteze o locație
         mMap.setOnMapClickListener(latLng -> {
             mMap.clear();
             mMap.addMarker(new MarkerOptions().position(latLng).title("Selected Location"));
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f));
+            selectedLocation = latLng;
         });
     }
 
@@ -345,39 +323,165 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         }
     }
 
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode,
+//                                           @NonNull String[] permissions,
+//                                           @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        if (requestCode == REQUEST_LOCATION_PERMISSION) {
+//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                enableMyLocation();
+//            } else {
+//                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
+//            }
+//        }
+//    }
+
+    private void saveProductToFirestore(Map<String, Object> productData) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("products")
+                .add(productData) // 🔥 Firebase generează automat un ID aici
+                .addOnSuccessListener(documentReference -> {
+                    // ✅ Obține ID-ul generat și actualizează documentul
+                    String productId = documentReference.getId();
+                    productData.put("id", productId);
+
+                    documentReference.update("id", productId)
+                            .addOnSuccessListener(aVoid -> {
+                                Toast.makeText(this, "Product added successfully!", Toast.LENGTH_SHORT).show();
+                                finish(); // Închide activitatea după postare
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Failed to update product ID: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error adding product: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+
+
+    private void validateAndPost() {
+        Log.d("DEBUG", "Intrat în validateAndPost()");
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = auth.getCurrentUser();
+
+        if (currentUser == null) {
+            Log.e("ERROR", "Utilizatorul nu este autentificat!");
+            Toast.makeText(this, "You need to be logged in to post!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Log.d("DEBUG", "Utilizator autentificat: " + currentUser.getUid());
+
+
+        String userId = currentUser.getUid(); // Obține UID-ul utilizatorului curent
+
+        String title = binding.etTitle.getText().toString().trim();
+        String description = binding.etDescription.getText().toString().trim();
+        String expirationDate = binding.etExpirationDate.getText().toString().trim();
+        String pickupTimes = binding.etPickupTimes.getText().toString().trim();
+        String pickupInstructions = binding.etPickupInstructions.getText().toString().trim();
+        String category = "Food";
+
+        if (selectedLatLng == null) {
+            Toast.makeText(this, "Please select a location on the map", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (title.isEmpty() || expirationDate.isEmpty() || pickupTimes.isEmpty()) {
+            Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // CORECTARE: Nu mai salvăm locația ca obiect separat, ci direct în document
+        Map<String, Object> product = new HashMap<>();
+        product.put("title", title);
+        product.put("description", description);
+        product.put("expirationDate", expirationDate);
+        product.put("pickupTimes", pickupTimes);
+        product.put("pickupInstructions", pickupInstructions);
+        product.put("category", category);
+        product.put("latitude", selectedLatLng.latitude);  // Salvăm direct latitudinea
+        product.put("longitude", selectedLatLng.longitude); // Salvăm direct longitudinea
+        product.put("userId", userId); // Salvăm UID-ul utilizatorului
+
+        // Adăugăm imaginea dacă există
+        if (selectedImageUri != null) {
+            uploadImageToCloudinary(product);
+        } else {
+            // Salvăm produsul fără imagine
+            saveProductToFirestore(product);
+        }
+    }
+
+    // Modificăm metodele pentru a lucra cu un singur Map
+
+
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_LOCATION_PERMISSION) {
+        if (requestCode == 1002) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                enableMyLocation();
+                Toast.makeText(this, "Permission granted!", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Permission denied!", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    private void validateAndPost() {
-        // Validate required fields
-        if (binding.etTitle.getText().toString().trim().isEmpty()) {
-            Toast.makeText(this, "Please enter a title", Toast.LENGTH_SHORT).show();
+    private void uploadImageToCloudinary(Map<String, Object> product) {
+        if (selectedImageUri == null) {
+            Log.e("ERROR", "selectedImageUri este null!");
             return;
         }
 
-        if (binding.etExpirationDate.getText().toString().trim().isEmpty()) {
-            Toast.makeText(this, "Please select an expiration date", Toast.LENGTH_SHORT).show();
+        Bitmap bitmap;
+        try {
+            bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), selectedImageUri);
+        } catch (IOException e) {
+            Log.e("ERROR", "Eroare la conversia imaginii: " + e.getMessage());
             return;
         }
 
-        if (binding.etPickupTimes.getText().toString().trim().isEmpty()) {
-            Toast.makeText(this, "Please enter pickup times", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream);
+        byte[] imageBytes = byteArrayOutputStream.toByteArray();
 
-        // All validations passed, post the item
-        Toast.makeText(this, "Food item posted successfully", Toast.LENGTH_SHORT).show();
-        finish();
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("file", "image.jpg", RequestBody.create(imageBytes, MediaType.parse("image/jpeg")))
+                .addFormDataPart("upload_preset", UPLOAD_PRESET)
+                .build();
+
+        Request request = new Request.Builder()
+                .url(CLOUDINARY_UPLOAD_URL)
+                .post(requestBody)
+                .build();
+
+        new Thread(() -> {
+            OkHttpClient client = new OkHttpClient();
+            try {
+                Response response = client.newCall(request).execute();
+                if (!response.isSuccessful()) {
+                    Log.e("ERROR", "Eroare la încărcarea imaginii: " + response.message());
+                    return;
+                }
+
+                String responseBody = response.body().string();
+                JSONObject jsonObject = new JSONObject(responseBody);
+                String imageUrl = jsonObject.getString("secure_url");
+
+                Log.d("DEBUG", "Imagine încărcată cu succes: " + imageUrl);
+                product.put("imageUrl", imageUrl);
+
+                runOnUiThread(() -> saveProductToFirestore(product));
+            } catch (Exception e) {
+                Log.e("ERROR", "Eroare la încărcarea imaginii: " + e.getMessage());
+            }
+        }).start();
     }
+
+
 }
