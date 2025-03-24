@@ -124,7 +124,17 @@ public class ProductDetailActivity extends AppCompatActivity {
         productTitle.setText(document.getString("title"));
         productDescription.setText(document.getString("description"));
         pickupTimes.setText(document.getString("pickupTimes"));
-        username.setText(document.getString("username"));
+
+        productOwnerId = document.getString("userId");
+
+        String usernameStr = document.getString("username");
+        if (usernameStr != null && !usernameStr.isEmpty()) {
+            username.setText("Posted by: " + usernameStr);
+        } else {
+            username.setText("Posted by: Unknown");
+        }
+
+
         com.google.firebase.Timestamp postedAt = document.getTimestamp("postedAt");
         if (postedAt != null) {
             long millis = postedAt.toDate().getTime();

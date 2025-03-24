@@ -353,25 +353,157 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
                 });
     }
 
+//    private void validateAndPost() {
+//        Log.d("DEBUG", "Intrat în validateAndPost()");
+//        FirebaseAuth auth = FirebaseAuth.getInstance();
+//        FirebaseUser currentUser = auth.getCurrentUser();
+//
+//        if (currentUser == null) {
+//            Log.e("ERROR", "Utilizatorul nu este autentificat!");
+//            Toast.makeText(this, "You need to be logged in to post!", Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//        Log.d("DEBUG", "Utilizator autentificat: " + currentUser.getUid());
+//
+//        String userId = currentUser.getUid();
+//        String title = binding.etTitle.getText().toString().trim();
+//        String description = binding.etDescription.getText().toString().trim();
+//        String expirationDate = binding.etExpirationDate.getText().toString().trim();
+//        String pickupTimes = binding.etPickupTimes.getText().toString().trim();
+//        String pickupInstructions = binding.etPickupInstructions.getText().toString().trim();
+//        String category = "Food";
+//        Spinner spinnerQuantity = findViewById(R.id.spinner_quantity);
+//        String quantity = spinnerQuantity.getSelectedItem().toString();
+//        if (quantity.equals("Select quantity")) {
+//            Toast.makeText(this, "Please select a valid quantity", Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//
+//        Spinner spinnerDays = findViewById(R.id.spinner_list_for_days);
+//        String listForDays = spinnerDays.getSelectedItem().toString();
+//
+//
+//        if (selectedLatLng == null) {
+//            Toast.makeText(this, "Please select a location on the map", Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//
+//        if (title.isEmpty() || expirationDate.isEmpty() || pickupTimes.isEmpty()) {
+//            Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show();
+//            return;
+//        }
+//
+//        ArrayList<String> imageUrls = new ArrayList<>();
+//
+//        Map<String, Object> product = new HashMap<>();
+//        product.put("title", title);
+//        product.put("description", description);
+//        product.put("expirationDate", expirationDate);
+//        product.put("pickupTimes", pickupTimes);
+//        product.put("pickupInstructions", pickupInstructions);
+//        product.put("category", category);
+//        product.put("latitude", selectedLatLng.latitude);
+//        product.put("longitude", selectedLatLng.longitude);
+//        product.put("userId", userId);
+//        product.put("quantity", quantity);
+//        product.put("listForDays", listForDays);
+//        product.put("postedAt", com.google.firebase.Timestamp.now());
+//
+//        product.put("imageUrls", imageUrls);
+//
+//        product.put("username", actualUsername); // îl iei din FirebaseAuth sau user snapshot
+//
+//
+//        if (!selectedImages.isEmpty()) {
+//            final int[] uploadedCount = {0};
+//            final int totalImages = selectedImages.size();
+//
+//            Log.d("DEBUG", "Starting upload of " + totalImages + " images");
+//
+//            for (Uri imageUri : selectedImages) {
+//                uploadImageToCloudinary(imageUri, new CloudinaryUploadCallback() {
+//                    @Override
+//                    public void onSuccess(String imageUrl) {
+//                        Log.d("DEBUG", "Image uploaded successfully: " + imageUrl);
+//
+//                        imageUrls.add(imageUrl);
+//                        uploadedCount[0]++;
+//
+//                        if (uploadedCount[0] == totalImages) {
+//                            product.put("imageUrls", imageUrls);
+//
+//                            if (!imageUrls.isEmpty()) {
+//                                product.put("imageUrl", imageUrls.get(0));
+//                            }
+//
+//                            Log.d("DEBUG", "All images uploaded. Saving product with " + imageUrls.size() + " images");
+//                            saveProductToFirestore(product);
+//                        }
+//                    }
+//
+//                    @Override
+//                    public void onFailure(String errorMessage) {
+//                        Log.e("ERROR", "Failed to upload image: " + errorMessage);
+//                        uploadedCount[0]++;
+//
+//                        if (uploadedCount[0] == totalImages) {
+//                            product.put("imageUrls", imageUrls);
+//                            if (!imageUrls.isEmpty()) {
+//                                product.put("imageUrl", imageUrls.get(0));
+//                            }
+//                            Log.d("DEBUG", "Some images failed to upload. Saving product with " + imageUrls.size() + " images");
+//                            saveProductToFirestore(product);
+//                        }
+//                    }
+//                });
+//            }
+//        } else {
+//            Log.d("DEBUG", "No images to upload. Saving product.");
+//            saveProductToFirestore(product);
+//        }
+//    }
+
     private void validateAndPost() {
         Log.d("DEBUG", "Intrat în validateAndPost()");
         FirebaseAuth auth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = auth.getCurrentUser();
 
         if (currentUser == null) {
-            Log.e("ERROR", "Utilizatorul nu este autentificat!");
             Toast.makeText(this, "You need to be logged in to post!", Toast.LENGTH_SHORT).show();
             return;
         }
-        Log.d("DEBUG", "Utilizator autentificat: " + currentUser.getUid());
 
         String userId = currentUser.getUid();
+
+        // 🔽 Obținem username-ul din Firestore (colecția "users")
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(userSnapshot -> {
+                    String username = userSnapshot.getString("username");
+                    if (username == null) {
+                        username = "Unknown";
+                    }
+
+                    // După ce am obținut username-ul, continuăm cu postarea
+                    postProduct(userId, username);
+
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Firestore", "❌ Eroare la obținerea username-ului", e);
+                    Toast.makeText(this, "Error retrieving user info", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void postProduct(String userId, String username) {
         String title = binding.etTitle.getText().toString().trim();
         String description = binding.etDescription.getText().toString().trim();
         String expirationDate = binding.etExpirationDate.getText().toString().trim();
         String pickupTimes = binding.etPickupTimes.getText().toString().trim();
         String pickupInstructions = binding.etPickupInstructions.getText().toString().trim();
         String category = "Food";
+
         Spinner spinnerQuantity = findViewById(R.id.spinner_quantity);
         String quantity = spinnerQuantity.getSelectedItem().toString();
         if (quantity.equals("Select quantity")) {
@@ -381,7 +513,6 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
 
         Spinner spinnerDays = findViewById(R.id.spinner_list_for_days);
         String listForDays = spinnerDays.getSelectedItem().toString();
-
 
         if (selectedLatLng == null) {
             Toast.makeText(this, "Please select a location on the map", Toast.LENGTH_SHORT).show();
@@ -394,7 +525,6 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         }
 
         ArrayList<String> imageUrls = new ArrayList<>();
-
         Map<String, Object> product = new HashMap<>();
         product.put("title", title);
         product.put("description", description);
@@ -405,60 +535,48 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         product.put("latitude", selectedLatLng.latitude);
         product.put("longitude", selectedLatLng.longitude);
         product.put("userId", userId);
+        product.put("username", username); // ✅ Acum îl avem!
         product.put("quantity", quantity);
         product.put("listForDays", listForDays);
         product.put("postedAt", com.google.firebase.Timestamp.now());
-
         product.put("imageUrls", imageUrls);
 
         if (!selectedImages.isEmpty()) {
             final int[] uploadedCount = {0};
             final int totalImages = selectedImages.size();
 
-            Log.d("DEBUG", "Starting upload of " + totalImages + " images");
-
             for (Uri imageUri : selectedImages) {
                 uploadImageToCloudinary(imageUri, new CloudinaryUploadCallback() {
                     @Override
                     public void onSuccess(String imageUrl) {
-                        Log.d("DEBUG", "Image uploaded successfully: " + imageUrl);
-
                         imageUrls.add(imageUrl);
                         uploadedCount[0]++;
-
                         if (uploadedCount[0] == totalImages) {
                             product.put("imageUrls", imageUrls);
-
-                            if (!imageUrls.isEmpty()) {
-                                product.put("imageUrl", imageUrls.get(0));
-                            }
-
-                            Log.d("DEBUG", "All images uploaded. Saving product with " + imageUrls.size() + " images");
+                            product.put("imageUrl", imageUrls.get(0));
                             saveProductToFirestore(product);
                         }
                     }
 
                     @Override
                     public void onFailure(String errorMessage) {
-                        Log.e("ERROR", "Failed to upload image: " + errorMessage);
                         uploadedCount[0]++;
-
                         if (uploadedCount[0] == totalImages) {
                             product.put("imageUrls", imageUrls);
                             if (!imageUrls.isEmpty()) {
                                 product.put("imageUrl", imageUrls.get(0));
                             }
-                            Log.d("DEBUG", "Some images failed to upload. Saving product with " + imageUrls.size() + " images");
                             saveProductToFirestore(product);
                         }
                     }
                 });
             }
         } else {
-            Log.d("DEBUG", "No images to upload. Saving product.");
             saveProductToFirestore(product);
         }
     }
+
+
     interface CloudinaryUploadCallback {
         void onSuccess(String imageUrl);
         void onFailure(String errorMessage);

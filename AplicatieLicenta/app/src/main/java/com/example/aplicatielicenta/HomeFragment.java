@@ -37,8 +37,10 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HomeFragment extends Fragment {
@@ -139,7 +141,7 @@ public class HomeFragment extends Fragment {
 
                         fullProductList.clear();
                         List<Product> tempProductList = new ArrayList<>();
-                        List<String> userIds = new ArrayList<>();
+                        Set<String> uniqueUserIds = new HashSet<>();
 
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             String title = document.getString("title") != null ? document.getString("title") : "No title";
@@ -163,23 +165,25 @@ public class HomeFragment extends Fragment {
                             );
 
                             tempProductList.add(newProduct);
-                            userIds.add(userId);
+                            uniqueUserIds.add(userId);
+
                         }
 
                         fullProductList.addAll(tempProductList);
 
-                        if (userIds.isEmpty()) {
+                        if (uniqueUserIds.isEmpty()) {
                             Log.d("Firestore", "⚠️ Nu există userId-uri pentru produse");
                             productAdapter.updateList(new ArrayList<>(fullProductList));
                             return;
                         }
 
                         AtomicInteger completedRequests = new AtomicInteger(0);
-                        int totalRequests = userIds.size();
+                        int totalRequests = tempProductList.size(); // câte produse sunt, nu câți useri unici
 
                         for (int i = 0; i < tempProductList.size(); i++) {
                             final int index = i;
-                            String userId = userIds.get(i);
+
+                            String userId = tempProductList.get(i).getUserId(); // ✅ accesezi userId-ul direct din produs
 
                             if (userId != null && !userId.isEmpty()) {
                                 db.collection("users").document(userId)
