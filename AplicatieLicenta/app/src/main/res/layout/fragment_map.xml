@@ -79,5 +79,44 @@
             android:textColor="@android:color/white"
             android:paddingHorizontal="20dp" />
     </LinearLayout>
+    <!-- Zoom controls -->
+    <LinearLayout
+        android:id="@+id/zoom_controls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="100dp"
+        android:gravity="center"
+        android:background="@drawable/zoom_control_background"
+        android:padding="8dp"
+        android:elevation="8dp"
+        android:clipToPadding="false">
+
+        <ImageButton
+            android:id="@+id/zoom_in_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/rounded_button"
+            android:src="@drawable/ic_zoom_in"
+            android:contentDescription="Zoom in"
+            app:tint="@android:color/white" />
+
+        <ImageButton
+            android:id="@+id/zoom_out_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/rounded_button"
+            android:src="@drawable/ic_zoom_out"
+            android:contentDescription="Zoom out"
+            app:tint="@android:color/white" />
+
+    </LinearLayout>
+
+
+
 
 </RelativeLayout>

@@ -37,6 +37,7 @@ import android.view.ViewGroup;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -74,6 +75,21 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_map, container, false);
+
+        ImageButton zoomIn = view.findViewById(R.id.zoom_in_button);
+        ImageButton zoomOut = view.findViewById(R.id.zoom_out_button);
+
+        zoomIn.setOnClickListener(v -> {
+            if (mMap != null) {
+                mMap.animateCamera(CameraUpdateFactory.zoomIn());
+            }
+        });
+
+        zoomOut.setOnClickListener(v -> {
+            if (mMap != null) {
+                mMap.animateCamera(CameraUpdateFactory.zoomOut());
+            }
+        });
 
         // Inițializează Firestore
         db = FirebaseFirestore.getInstance();
@@ -153,6 +169,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             }
             return true;
         });
+        mMap.setOnCameraIdleListener(() -> {
+            LatLng center = mMap.getCameraPosition().target;
+            float zoom = mMap.getCameraPosition().zoom;
+
+            Log.d("Map", "📍 Centru hartă: " + center.latitude + ", " + center.longitude + " | Zoom: " + zoom);
+
+            // Poți folosi aici: să încarci produse într-un anumit radius de la centru
+            loadProductsNear(center.latitude, center.longitude, 10); // 10km de ex
+        });
 
         mMap.setOnMapClickListener(latLng -> {
             if (productCard.getVisibility() == View.VISIBLE) {
@@ -162,6 +187,36 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
 
     }
+    private void loadProductsNear(double lat, double lng, double radiusKm) {
+        db.collection("products")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    mMap.clear();
+                    for (QueryDocumentSnapshot document : querySnapshot) {
+                        Double productLat = document.getDouble("latitude");
+                        Double productLng = document.getDouble("longitude");
+
+                        if (productLat != null && productLng != null) {
+                            float[] results = new float[1];
+                            Location.distanceBetween(lat, lng, productLat, productLng, results);
+                            float distanceInMeters = results[0];
+                            if (distanceInMeters <= radiusKm * 1000) {
+                                // Afișează marker
+                                LatLng position = new LatLng(productLat, productLng);
+                                MarkerOptions markerOptions = new MarkerOptions()
+                                        .position(position)
+                                        .title(document.getString("title"))
+                                        .snippet(document.getString("description"));
+                                Marker marker = mMap.addMarker(markerOptions);
+                                if (marker != null) {
+                                    marker.setTag(document.getId());
+                                }
+                            }
+                        }
+                    }
+                });
+    }
+
 
 
     private void getLocationPermission() {
