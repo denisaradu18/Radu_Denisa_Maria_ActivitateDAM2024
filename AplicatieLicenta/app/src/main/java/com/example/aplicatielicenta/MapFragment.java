@@ -11,6 +11,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+
+import com.bumptech.glide.Glide;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -22,13 +24,26 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.util.Log;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MapFragment extends Fragment implements OnMapReadyCallback {
 
@@ -43,6 +58,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private boolean locationPermissionGranted = false;
     private Location lastKnownLocation;
     private SupportMapFragment mapFragment;
+    private Map<String, String> markerImageMap = new HashMap<>(); // <MarkerId, ImageURL>
+
+    private View productCard;
+    private ImageView cardImage;
+    private TextView cardTitle, cardDescription;
+    private Button cardButton;
+
 
     public MapFragment() {
         // Constructor gol necesar pentru fragment
@@ -64,16 +86,50 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         FragmentTransaction transaction = getChildFragmentManager().beginTransaction();
         transaction.replace(R.id.map_container, mapFragment).commit();
 
+        EditText searchInput = view.findViewById(R.id.search_input);
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filterMarkers(s.toString().trim().toLowerCase());
+            }
+
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void afterTextChanged(Editable s) {}
+        });
+
+
+
         // Obține callback-ul când harta este gata
         mapFragment.getMapAsync(this);
 
+        productCard = view.findViewById(R.id.product_card);
+        cardImage = view.findViewById(R.id.card_image);
+        cardTitle = view.findViewById(R.id.card_title);
+        cardDescription = view.findViewById(R.id.card_description);
+        cardButton = view.findViewById(R.id.card_button);
+
         return view;
     }
+
+    private List<Marker> markerList = new ArrayList<>();
+
+    private void filterMarkers(String query) {
+        for (Marker marker : markerList) {
+            String title = marker.getTitle() != null ? marker.getTitle().toLowerCase() : "";
+            String snippet = marker.getSnippet() != null ? marker.getSnippet().toLowerCase() : "";
+            boolean visible = title.contains(query) || snippet.contains(query);
+            marker.setVisible(visible);
+        }
+    }
+
+
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+
+        mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(requireContext(), markerImageMap));
 
         getLocationPermission();
         updateLocationUI();
@@ -83,12 +139,28 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         mMap.setOnMarkerClickListener(marker -> {
             String productId = (String) marker.getTag();
             if (productId != null) {
-                Intent intent = new Intent(requireContext(), ProductDetailActivity.class);
-                intent.putExtra("PRODUCT_ID", productId); // Pasăm ID-ul produsului
-                startActivity(intent);
+                db.collection("products").document(productId).get()
+                        .addOnSuccessListener(document -> {
+                            if (document.exists()) {
+                                String title = document.getString("title");
+                                String description = document.getString("description");
+                                List<String> imageUrls = (List<String>) document.get("imageUrls");
+
+                                ProductBottomSheet bottomSheet = new ProductBottomSheet(productId, title, description, imageUrls);
+                                bottomSheet.show(getChildFragmentManager(), bottomSheet.getTag());
+                            }
+                        });
             }
-            return false;
+            return true;
         });
+
+        mMap.setOnMapClickListener(latLng -> {
+            if (productCard.getVisibility() == View.VISIBLE) {
+                productCard.setVisibility(View.GONE);
+            }
+        });
+
+
     }
 
 
@@ -197,6 +269,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         }
     }
 
+
     private void loadProductsFromFirestore() {
         db.collection("products")
                 .get()
@@ -211,9 +284,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                                 String title = document.getString("title");
                                 String description = document.getString("description");
 
+                                // 🔽 Obținem prima imagine (dacă există)
+                                List<String> imageUrls = (List<String>) document.get("imageUrls");
+                                String firstImageUrl = (imageUrls != null && !imageUrls.isEmpty()) ?
+                                        imageUrls.get(0) : "";
+
                                 LatLng productLocation = new LatLng(latitude, longitude);
 
-                                // Adăugăm un pin pe hartă pentru fiecare produs
+                                // Creăm markerul
                                 MarkerOptions markerOptions = new MarkerOptions()
                                         .position(productLocation)
                                         .title(title != null ? title : "Produs fără titlu")
@@ -221,18 +299,23 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
 
                                 com.google.android.gms.maps.model.Marker marker = mMap.addMarker(markerOptions);
-
                                 if (marker != null) {
                                     marker.setTag(document.getId());
+                                    markerList.add(marker); // ✅ pentru filtrare
+
+                                    // 🔥 ADĂUGĂM imaginea în map pentru InfoWindow
+                                    markerImageMap.put(marker.getId(), firstImageUrl);
                                 }
                             }
                         }
+
                         Log.d(TAG, "Toate produsele au fost încărcate pe hartă.");
                     } else {
                         Log.e(TAG, "Eroare la încărcarea produselor: ", task.getException());
                     }
                 });
     }
+
     @Override
     public void onPause() {
         super.onPause();
