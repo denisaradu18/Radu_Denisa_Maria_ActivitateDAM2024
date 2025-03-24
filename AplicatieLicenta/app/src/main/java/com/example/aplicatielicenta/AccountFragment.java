@@ -38,17 +38,14 @@ public class AccountFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Inițializează butoanele
         btnMyListings = view.findViewById(R.id.btn_my_listings);
         btnFavorites = view.findViewById(R.id.btn_favorites);
 
-        // Buton pentru anunțurile utilizatorului
         btnMyListings.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), MyListingsActivity.class);
             startActivity(intent);
         });
 
-        // Buton pentru favorite
         btnFavorites.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), FavoritesActivity.class);
             startActivity(intent);

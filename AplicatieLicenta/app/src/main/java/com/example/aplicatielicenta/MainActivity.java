@@ -15,8 +15,11 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.aplicatielicenta.databinding.ActivityMainBinding;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
                 replaceFragment(new MapFragment());
                 return true;
             } else if (itemId == R.id.inbox) {
-                replaceFragment(new InboxFragment());
+                replaceFragment(new FragmentInbox());
                 return true;
             } else if (itemId == R.id.account) {
                 replaceFragment(new AccountFragment());
@@ -59,25 +62,49 @@ public class MainActivity extends AppCompatActivity {
         });
 
         binding.fab.setOnClickListener(v -> {
-            // Construiește un dialog cu două opțiuni
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-            builder.setTitle(getString(R.string.choose_product_type)); // Titlu luat din strings.xml
+            builder.setTitle(getString(R.string.choose_product_type));
             builder.setItems(new CharSequence[]{
                     getString(R.string.food_option),
                     getString(R.string.non_food_option)
             }, (dialog, which) -> {
                 if (which == 0) {
-                    // Utilizatorul a ales "Food"
                     Intent intent = new Intent(MainActivity.this, AddFoodActivity.class);
                     startActivity(intent);
                 } else {
-                    // Utilizatorul a ales "Non-Food"
                     Intent intent = new Intent(MainActivity.this, AddNonFoodActivity.class);
                     startActivity(intent);
                 }
             });
             builder.show();
         });
+
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.container, new MapFragment())
+                .commit();
+
+
+
+
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Log.w("FCM", "Fetching FCM registration token failed", task.getException());
+                        return;
+                    }
+                    // Get new FCM registration token
+                    String token = task.getResult();
+                    Log.d("FCM", "FCM Token: " + token);
+
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    if (user != null) {
+                        FirebaseFirestore db = FirebaseFirestore.getInstance();
+                        db.collection("users").document(user.getUid())
+                                .update("fcmToken", token)
+                                .addOnSuccessListener(aVoid -> Log.d("FCM", "Token saved successfully"))
+                                .addOnFailureListener(e -> Log.e("FCM", "Failed to save token", e));
+                    }
+                });
 
     }
 
@@ -93,11 +120,10 @@ public class MainActivity extends AppCompatActivity {
                             productList.add(product);
                         }
 
-                        // Actualizăm UI-ul după ce am încărcat datele
                         runOnUiThread(() -> {
                             FragmentManager fragmentManager = getSupportFragmentManager();
                             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                            fragmentTransaction.replace(R.id.frame_layout, new HomeFragment(productList));
+                            fragmentTransaction.replace(R.id.container, new HomeFragment(productList));
                             fragmentTransaction.commit();
                         });
 
@@ -110,7 +136,9 @@ public class MainActivity extends AppCompatActivity {
     private void replaceFragment(Fragment fragment) {
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(R.id.frame_layout, fragment);
+        fragmentTransaction.replace(R.id.container, fragment);
         fragmentTransaction.commit();
     }
+
+
 }

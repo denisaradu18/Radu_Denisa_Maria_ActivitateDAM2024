@@ -32,8 +32,8 @@ public class FavoritesActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
 
-        if (getSupportActionBar() != null) { // Sau "My Listings" pentru cealaltă activitate
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true); // Activează butonul de back
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setHomeButtonEnabled(true);
         }
 
@@ -69,7 +69,7 @@ public class FavoritesActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        finish(); // Închide activitatea și revine la cea anterioară
+        finish();
         return true;
     }
 }

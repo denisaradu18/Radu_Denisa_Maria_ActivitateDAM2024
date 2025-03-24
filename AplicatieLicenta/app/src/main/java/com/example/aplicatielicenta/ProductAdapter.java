@@ -1,5 +1,6 @@
 package com.example.aplicatielicenta;
 
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,6 +18,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +29,8 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     private List<Product> productList;
     private Set<String> favoriteProducts = new HashSet<>();
     private double userLatitude, userLongitude;
+    private List<Product> originalProductList = new ArrayList<>();
+
 
     // Constructor normal
     public ProductAdapter(List<Product> productList) {
@@ -55,8 +59,15 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         Product product = productList.get(position);
 
         holder.titleTextView.setText(product.getTitle());
-        holder.usernameTextView.setText("Posted by: " + product.getUsername());
+        // 🔍 Debugging: Afișează în Logcat dacă username-ul este setat corect
+        Log.d("ProductAdapter", "📌 Produs: " + product.getTitle() + " | Username: " + product.getUsername());
 
+        if (product.getUsername() == null || product.getUsername().isEmpty()) {
+            Log.e("ProductAdapter", "⚠️ Username indisponibil pentru " + product.getTitle());
+            holder.usernameTextView.setText("Posted by: Unknown");
+        } else {
+            holder.usernameTextView.setText("Posted by: " + product.getUsername());
+        }
         // Debugging: Afișăm în log coordonatele produsului și utilizatorului
         Log.d("ProductAdapter", "User Location: Lat = " + userLatitude + ", Lng = " + userLongitude);
         Log.d("ProductAdapter", "Product Location: Lat = " + product.getLatitude() + ", Lng = " + product.getLongitude());
@@ -74,17 +85,22 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
             holder.distanceTextView.setText("Distance unknown");
         }
 
-        // Încărcăm imaginea produsului dacă există URL
-        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+        // FIX: Încărcăm imaginea produsului din lista de imagini, luând prima imagine dacă există
+        if (product.getImageUrls() != null && !product.getImageUrls().isEmpty()) {
+            // Luăm prima imagine din lista de URL-uri
+            String firstImageUrl = product.getImageUrls().get(0);
+            Log.d("ProductAdapter", "Loading image: " + firstImageUrl);
+
             Glide.with(holder.itemView.getContext())
-                    .load(product.getImageUrl())
-                    .placeholder(R.drawable.placeholder_image) // Înlocuiește cu imaginea ta placeholder
-                    .error(R.drawable.error_image) // Înlocuiește cu imaginea ta de eroare
+                    .load(firstImageUrl)
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(R.drawable.error_image)
                     .into(holder.productImageView);
         } else {
-            // Set a default image if no URL is provided
-            holder.productImageView.setImageResource(R.drawable.placeholder_image); // Înlocuiește cu imaginea ta default
+            Log.w("ProductAdapter", "No images available for product: " + product.getTitle());
+            holder.productImageView.setImageResource(R.drawable.placeholder_image);
         }
+
         holder.favoriteButton.setOnClickListener(v -> {
             FirebaseFirestore db = FirebaseFirestore.getInstance();
             String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -96,12 +112,16 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                         .whereEqualTo("productId", product.getId())
                         .get()
                         .addOnSuccessListener(querySnapshot -> {
-                            for (QueryDocumentSnapshot document : querySnapshot) {
-                                document.getReference().delete();
+                            if (!querySnapshot.isEmpty()) {
+                                for (QueryDocumentSnapshot document : querySnapshot) {
+                                    document.getReference().delete();
+                                }
+                                favoriteProducts.remove(product.getId());
+                                holder.favoriteButton.setImageResource(R.drawable.ic_star_border);
+                                Toast.makeText(holder.itemView.getContext(), "Removed from favorites", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Log.e("Favorites", "Favorite not found in Firebase!");
                             }
-                            favoriteProducts.remove(product.getId());
-                            holder.favoriteButton.setImageResource(R.drawable.ic_star_border);
-                            Toast.makeText(holder.itemView.getContext(), "Removed from favorites", Toast.LENGTH_SHORT).show();
                         });
             } else {
                 // Adăugăm produsul la favorite
@@ -109,7 +129,9 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                 favorite.put("userId", userId);
                 favorite.put("productId", product.getId());
                 favorite.put("title", product.getTitle());
-                favorite.put("imageUrl", product.getImageUrl());
+
+                favorite.put("imageUrl", product.getImageUrls() != null && !product.getImageUrls().isEmpty() ?
+                        product.getImageUrls().get(0) : null);
 
                 db.collection("favorites")
                         .add(favorite)
@@ -120,20 +142,55 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
                         });
             }
         });
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(v.getContext(), ProductDetailActivity.class);
+            intent.putExtra("PRODUCT_ID", product.getId()); // ✅ Asigură-te că trimitem productId-ul corect!
+
+            // Trimitem și celelalte informații despre produs
+            intent.putExtra("title", product.getTitle());
+            intent.putExtra("description", product.getDescription());
+
+            if (product.getImageUrls() != null) {
+                intent.putStringArrayListExtra("imageUrls", new ArrayList<>(product.getImageUrls()));
+            } else {
+                intent.putStringArrayListExtra("imageUrls", new ArrayList<>());
+            }
+
+            intent.putExtra("pickupTimes", product.getPickupTimes());
+            intent.putExtra("latitude", product.getLatitude());
+            intent.putExtra("longitude", product.getLongitude());
+            intent.putExtra("username", product.getUsername());
+            intent.putExtra("dateAdded", "1 day ago");
+
+            v.getContext().startActivity(intent);
+        });
+
     }
+
     @Override
     public int getItemCount() {
         return productList.size();
     }
 
     public void updateList(List<Product> newList) {
-        if (newList == null || newList.isEmpty()) {
-            Log.e("ProductAdapter", "❌ Lista de produse este goală! Nu o actualizăm.");
+        if (newList == null) {
+            Log.e("ProductAdapter", "❌ Lista de produse este null!");
             return;
+        }
+
+        if (originalProductList.isEmpty()) {
+            originalProductList.addAll(productList); // Salvează lista inițială
         }
 
         productList.clear();
         productList.addAll(newList);
+        notifyDataSetChanged();
+    }
+
+    public void resetList() {
+        productList.clear();
+        productList.addAll(originalProductList);
         notifyDataSetChanged();
     }
 

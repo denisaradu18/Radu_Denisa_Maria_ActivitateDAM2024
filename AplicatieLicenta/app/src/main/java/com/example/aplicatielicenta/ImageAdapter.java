@@ -39,10 +39,8 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> 
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Uri imageUri = imageList.get(position);
 
-        // Încărcăm imaginea cu Glide
         Glide.with(context).load(imageUri).into(holder.imageView);
 
-        // Butonul de ștergere a imaginii
         holder.btnDelete.setOnClickListener(v -> {
             if (deleteListener != null) {
                 deleteListener.onImageDelete(position);

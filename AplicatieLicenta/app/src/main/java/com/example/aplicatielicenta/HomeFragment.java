@@ -30,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -47,16 +48,16 @@ public class HomeFragment extends Fragment {
     private List<Product> fullProductList; // Lista de produse
     private EditText searchBar;
     private ImageView searchIcon;
-    private TabLayout tabLayout;
+
     private double userLatitude = 0.0;
     private double userLongitude = 0.0;
+    private MaterialButton btnAll, btnFood, btnNonFood;
 
-    // 🔹 Constructor care acceptă o listă de produse
+
     public HomeFragment(List<Product> productList) {
         this.fullProductList = productList;
     }
 
-    // 🔹 Constructor gol necesar pentru Fragment
     public HomeFragment() {
         this.fullProductList = new ArrayList<>(); // Inițializare goală
     }
@@ -70,46 +71,35 @@ public class HomeFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
         requestLocationPermission();
-        // Legăm view-urile
+
         recyclerView = view.findViewById(R.id.recyclerView);
         searchBar    = view.findViewById(R.id.search_bar);
         searchIcon   = view.findViewById(R.id.search_icon);
-        tabLayout    = view.findViewById(R.id.tabLayout);
+        btnAll = view.findViewById(R.id.btn_all);
+        btnFood = view.findViewById(R.id.btn_food);
+        btnNonFood = view.findViewById(R.id.btn_non_food);
+        btnAll.setOnClickListener(v -> filterByTab("All"));
+        btnFood.setOnClickListener(v -> filterByTab("Food"));
+        btnNonFood.setOnClickListener(v -> filterByTab("Non-Food"));
 
-        // Setăm adapterul
         productAdapter = new ProductAdapter(new ArrayList<>() , userLatitude, userLongitude);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), 2));
         recyclerView.setAdapter(productAdapter);
 
-        // Dacă lista de produse este goală, o încărcăm din Firestore
         if (fullProductList == null || fullProductList.isEmpty()) {
             loadProductsFromFirestore();
         }
-
-        // Listener pentru tab-uri
-        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
-            @Override
-            public void onTabSelected(TabLayout.Tab tab) {
-                filterByTab(tab.getText().toString());
-            }
-
-            @Override
-            public void onTabUnselected(TabLayout.Tab tab) { }
-
-            @Override
-            public void onTabReselected(TabLayout.Tab tab) {
-                filterByTab(tab.getText().toString());
-            }
-        });
-
-        // Search live (ori de câte ori se tastează)
         searchBar.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterBySearch(s.toString());
+                if (s.toString().isEmpty()) {
+                    productAdapter.resetList();
+                } else {
+                    filterBySearch(s.toString());
+                }
             }
 
             @Override
@@ -122,7 +112,7 @@ public class HomeFragment extends Fragment {
         if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
         } else {
-            getUserLocation(); // ✅ Dacă permisiunea există, obținem locația
+            getUserLocation();
         }
     }
 
@@ -136,252 +126,107 @@ public class HomeFragment extends Fragment {
         }
     }
 
-//    private void loadProductsFromFirestore() {
-//        FirebaseFirestore db = FirebaseFirestore.getInstance();
-//
-//        // Inițializăm/resetăm lista de produse
-//        fullProductList = new ArrayList<>();
-//
-//        db.collection("products")
-//                .get()
-//                .addOnCompleteListener(task -> {
-//                    if (task.isSuccessful()) {
-//                        List<Product> tempProductList = new ArrayList<>();
-//                        List<String> userIds = new ArrayList<>(); // Pentru a ține evidența userIds
-//
-//                        for (QueryDocumentSnapshot document : task.getResult()) {
-//                            // Preluăm fiecare câmp, cu fallback la valori implicite
-//                            String title = document.getString("title") != null ? document.getString("title") : "No title";
-//                            String description = document.getString("description") != null ? document.getString("description") : "No description";
-//                            String expirationDate = document.getString("expirationDate") != null ? document.getString("expirationDate") : "Unknown";
-//                            String pickupTimes = document.getString("pickupTimes") != null ? document.getString("pickupTimes") : "Not specified";
-//                            String pickupInstructions = document.getString("pickupInstructions") != null ? document.getString("pickupInstructions") : "None";
-//                            String category = document.getString("category") != null ? document.getString("category") : "Uncategorized";
-//                            String imageUrl = document.getString("imageUrl") != null ? document.getString("imageUrl") : "";
-//                            String userId = document.getString("userId") != null ? document.getString("userId") : null;
-//
-//                            // CORECTARE: Verificăm dacă latitudinea și longitudinea sunt stocate direct sau în obiectul location
-//                            double latitude = 0.0;
-//                            double longitude = 0.0;
-//
-//                            if (document.getDouble("latitude") != null) {
-//                                // Direct în document
-//                                latitude = document.getDouble("latitude");
-//                                longitude = document.getDouble("longitude") != null ? document.getDouble("longitude") : 0.0;
-//                            } else if (document.get("location") != null) {
-//                                // În obiectul location
-//                                Map<String, Object> location = (Map<String, Object>) document.get("location");
-//                                if (location != null) {
-//                                    if (location.get("latitude") instanceof Double) {
-//                                        latitude = (Double) location.get("latitude");
-//                                    }
-//                                    if (location.get("longitude") instanceof Double) {
-//                                        longitude = (Double) location.get("longitude");
-//                                    }
-//                                }
-//                            }
-//
-//                            // Debugging pentru locație
-//                            Log.d("Firestore", "Produs: " + title + " | Lat: " + latitude + " | Lng: " + longitude);
-//
-//                            // Creăm produsul temporar cu username implicit
-//                            Product newProduct = new Product(title, description, expirationDate, pickupTimes, pickupInstructions,
-//                                    category, latitude, longitude, imageUrl, "Loading...");
-//
-//                            tempProductList.add(newProduct);
-//                            userIds.add(userId); // Salvăm userId-ul în aceeași ordine ca și produsele
-//                        }
-//
-//                        // Actualizăm lista și adaptorul cu produsele, chiar înainte de a obține username-urile
-//                        fullProductList.addAll(tempProductList);
-//                        productAdapter.updateList(new ArrayList<>(fullProductList));
-//
-//                        // Acum obținem username-urile pentru fiecare produs
-//                        for (int i = 0; i < tempProductList.size(); i++) {
-//                            final int productIndex = i;
-//                            String userId = userIds.get(i);
-//
-//                            if (userId != null && !userId.isEmpty()) {
-//                                db.collection("users").document(userId)
-//                                        .get()
-//                                        .addOnSuccessListener(userDoc -> {
-//                                            if (userDoc.exists() && productIndex < fullProductList.size()) {
-//                                                String username = userDoc.getString("username") != null ?
-//                                                        userDoc.getString("username") : "Unknown User";
-//
-//                                                // Actualizăm username-ul produsului în lista noastră
-//                                                Product updatedProduct = fullProductList.get(productIndex);
-//                                                // Creăm un nou obiect Product cu username-ul actualizat
-//                                                Product productWithUsername = new Product(
-//                                                        updatedProduct.getTitle(),
-//                                                        updatedProduct.getDescription(),
-//                                                        updatedProduct.getExpirationDate(),
-//                                                        updatedProduct.getPickupTimes(),
-//                                                        updatedProduct.getPickupInstructions(),
-//                                                        updatedProduct.getCategory(),
-//                                                        updatedProduct.getLatitude(),
-//                                                        updatedProduct.getLongitude(),
-//                                                        updatedProduct.getImageUrl(),
-//                                                        username
-//                                                );
-//
-//                                                // Înlocuim produsul în listă
-//                                                fullProductList.set(productIndex, productWithUsername);
-//
-//                                                // Actualizăm adaptorul după fiecare actualizare de username
-//                                                productAdapter.updateList(new ArrayList<>(fullProductList));
-//                                            }
-//                                        })
-//                                        .addOnFailureListener(e -> Log.e("Firestore", "Eroare la obținerea utilizatorului: " + e.getMessage()));
-//                            }
-//                        }
-//
-//                    } else {
-//                        Log.e("Firestore", "Eroare la încărcarea produselor: ", task.getException());
-//                    }
-//                });
-//    }
-
-
 
     private void loadProductsFromFirestore() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-        // Inițializăm/resetăm lista de produse
-        fullProductList = new ArrayList<>();
+        Log.d("Firestore", "📥 Începem încărcarea produselor...");
 
         db.collection("products")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
+                        Log.d("Firestore", "✅ Produse încărcate! Număr: " + task.getResult().size());
+
+                        fullProductList.clear();
                         List<Product> tempProductList = new ArrayList<>();
-                        List<String> userIds = new ArrayList<>(); // Pentru a ține evidența userIds
+                        List<String> userIds = new ArrayList<>();
 
                         for (QueryDocumentSnapshot document : task.getResult()) {
-                            // Preluăm fiecare câmp, cu fallback la valori implicite
                             String title = document.getString("title") != null ? document.getString("title") : "No title";
                             String description = document.getString("description") != null ? document.getString("description") : "No description";
-                            String expirationDate = document.getString("expirationDate") != null ? document.getString("expirationDate") : "Unknown";
-                            String pickupTimes = document.getString("pickupTimes") != null ? document.getString("pickupTimes") : "Not specified";
-                            String pickupInstructions = document.getString("pickupInstructions") != null ? document.getString("pickupInstructions") : "None";
                             String category = document.getString("category") != null ? document.getString("category") : "Uncategorized";
-                            String imageUrl = document.getString("imageUrl") != null ? document.getString("imageUrl") : "";
-                            String userId = document.getString("userId") != null ? document.getString("userId") : null;
+
+                            List<String> imageUrls = (List<String>) document.get("imageUrls");
+                            if (imageUrls == null) imageUrls = new ArrayList<>();
+
+                            String userId = document.getString("userId");
                             String productId = document.getId();
-                            // CORECTARE: Verificăm dacă latitudinea și longitudinea sunt stocate direct sau în obiectul location
-                            double latitude = 0.0;
-                            double longitude = 0.0;
 
-                            if (document.getDouble("latitude") != null) {
-                                // Direct în document
-                                latitude = document.getDouble("latitude");
-                                longitude = document.getDouble("longitude") != null ? document.getDouble("longitude") : 0.0;
-                            } else if (document.get("location") != null) {
-                                // În obiectul location
-                                Map<String, Object> location = (Map<String, Object>) document.get("location");
-                                if (location != null) {
-                                    if (location.get("latitude") instanceof Double) {
-                                        latitude = (Double) location.get("latitude");
-                                    }
-                                    if (location.get("longitude") instanceof Double) {
-                                        longitude = (Double) location.get("longitude");
-                                    }
-                                }
-                            }
+                            Log.d("Firestore", "🛒 Produs: " + title + " | UserId: " + userId);
 
-                            // Debugging pentru locație
-                            Log.d("Firestore", "Produs: " + title + " | Lat: " + latitude + " | Lng: " + longitude);
-                            // Debugging pentru categorie
-                            Log.d("Firestore", "Produs: " + title + " | Categorie: '" + category + "'");
+                            double latitude = document.getDouble("latitude") != null ? document.getDouble("latitude") : 0.0;
+                            double longitude = document.getDouble("longitude") != null ? document.getDouble("longitude") : 0.0;
 
-                            // Creăm produsul temporar cu username implicit
-                            Product newProduct = new Product(productId,title, description, expirationDate, pickupTimes, pickupInstructions,
-                                    category, latitude, longitude, imageUrl, "Loading...");
+                            Product newProduct = new Product(
+                                    productId, title, description, "", "", "",
+                                    category, latitude, longitude, imageUrls, "Loading..."
+                            );
 
                             tempProductList.add(newProduct);
-                            userIds.add(userId); // Salvăm userId-ul în aceeași ordine ca și produsele
+                            userIds.add(userId);
                         }
 
-                        // Adăugăm produsele în lista completă
                         fullProductList.addAll(tempProductList);
 
-                        // Nu actualizăm adaptorul imediat - vom aștepta până obținem toate username-urile
-
-                        // Folosim un contor atomic pentru a ști când am terminat toate cererile de username
-                        AtomicInteger completedRequests = new AtomicInteger(0);
-                        final int totalRequests = userIds.size();
-
-                        if (totalRequests == 0) {
-                            // Dacă nu avem produse, actualizăm adaptorul imediat
+                        if (userIds.isEmpty()) {
+                            Log.d("Firestore", "⚠️ Nu există userId-uri pentru produse");
                             productAdapter.updateList(new ArrayList<>(fullProductList));
                             return;
                         }
 
-                        // Acum obținem username-urile pentru fiecare produs
+                        AtomicInteger completedRequests = new AtomicInteger(0);
+                        int totalRequests = userIds.size();
+
                         for (int i = 0; i < tempProductList.size(); i++) {
-                            final int productIndex = i;
+                            final int index = i;
                             String userId = userIds.get(i);
 
                             if (userId != null && !userId.isEmpty()) {
                                 db.collection("users").document(userId)
                                         .get()
                                         .addOnSuccessListener(userDoc -> {
-                                            if (userDoc.exists() && productIndex < fullProductList.size()) {
-                                                String username = userDoc.getString("username") != null ?
-                                                        userDoc.getString("username") : "Unknown User";
+                                            if (userDoc.exists()) {
+                                                String username = userDoc.getString("username");
+                                                Log.d("Firestore", "👤 UserId: " + userId + " | Username: " + username);
 
-                                                // Actualizăm username-ul produsului în lista noastră
-                                                Product updatedProduct = fullProductList.get(productIndex);
-                                                // Creăm un nou obiect Product cu username-ul actualizat
-                                                Product productWithUsername = new Product(
-                                                        updatedProduct.getId(),
-                                                        updatedProduct.getTitle(),
-                                                        updatedProduct.getDescription(),
-                                                        updatedProduct.getExpirationDate(),
-                                                        updatedProduct.getPickupTimes(),
-                                                        updatedProduct.getPickupInstructions(),
-                                                        updatedProduct.getCategory(),
-                                                        updatedProduct.getLatitude(),
-                                                        updatedProduct.getLongitude(),
-                                                        updatedProduct.getImageUrl(),
-                                                        username
-                                                );
-
-                                                // Înlocuim produsul în listă
-                                                fullProductList.set(productIndex, productWithUsername);
-
-                                                // Verificăm dacă toate cererile de username au fost completate
-                                                if (completedRequests.incrementAndGet() == totalRequests) {
-                                                    // Doar după ce avem toate username-urile, actualizăm adaptorul
-                                                    Log.d("Firestore", "Toate username-urile au fost încărcate, actualizăm UI-ul");
-                                                    productAdapter.updateList(new ArrayList<>(fullProductList));
+                                                if (username != null && !username.isEmpty()) {
+                                                    fullProductList.get(index).setUsername(username);
+                                                } else {
+                                                    fullProductList.get(index).setUsername("Anonim");
                                                 }
                                             } else {
-                                                // Incrementăm contorul chiar dacă documentul nu există
-                                                if (completedRequests.incrementAndGet() == totalRequests) {
-                                                    productAdapter.updateList(new ArrayList<>(fullProductList));
-                                                }
+                                                Log.d("Firestore", "⚠️ UserId: " + userId + " NU are document în `users`!");
+                                                fullProductList.get(index).setUsername("Anonim");
+                                            }
+
+                                            if (completedRequests.incrementAndGet() == totalRequests) {
+                                                Log.d("Firestore", "🎉 Toate username-urile au fost încărcate!");
+                                                productAdapter.updateList(new ArrayList<>(fullProductList));
                                             }
                                         })
                                         .addOnFailureListener(e -> {
-                                            Log.e("Firestore", "Eroare la obținerea utilizatorului: " + e.getMessage());
-                                            // Incrementăm contorul și în caz de eroare
+                                            Log.e("Firestore", "❌ Eroare la preluarea username-ului!", e);
+                                            fullProductList.get(index).setUsername("Anonim");
+
                                             if (completedRequests.incrementAndGet() == totalRequests) {
                                                 productAdapter.updateList(new ArrayList<>(fullProductList));
                                             }
                                         });
                             } else {
-                                // Dacă nu avem un userId, incrementăm contorul și continuăm
+                                Log.d("Firestore", "⚠️ UserId este NULL pentru produsul " + fullProductList.get(index).getTitle());
+                                fullProductList.get(index).setUsername("Anonim");
+
                                 if (completedRequests.incrementAndGet() == totalRequests) {
                                     productAdapter.updateList(new ArrayList<>(fullProductList));
                                 }
                             }
                         }
                     } else {
-                        Log.e("Firestore", "Eroare la încărcarea produselor: ", task.getException());
+                        Log.e("Firestore", "❌ Eroare la încărcarea produselor", task.getException());
                     }
                 });
     }
+
     private void filterByTab(String category) {
         List<Product> filteredList = new ArrayList<>();
 
@@ -407,25 +252,32 @@ public class HomeFragment extends Fragment {
     }
 
     private void filterBySearch(String query) {
-        List<Product> filteredList = new ArrayList<>();
-        for (Product product : fullProductList) {
-            if (product.getTitle().toLowerCase().contains(query.toLowerCase())) {
-                filteredList.add(product);
+        if (query.isEmpty()) {
+            productAdapter.updateList(new ArrayList<>(fullProductList));
+        } else {
+            List<Product> filteredList = new ArrayList<>();
+            for (Product product : fullProductList) {
+                if (product.getTitle().toLowerCase().contains(query.toLowerCase())) {
+                    filteredList.add(product);
+                }
             }
+            productAdapter.updateList(filteredList);
         }
-        productAdapter.updateList(filteredList);
     }
+
     private void requestNewLocationData() {
-        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+        if (getActivity() == null) return;
+
+        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
 
         com.google.android.gms.location.LocationRequest locationRequest = com.google.android.gms.location.LocationRequest.create();
         locationRequest.setPriority(com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY);
-        locationRequest.setInterval(5000); // Actualizare la fiecare 5 secunde
+        locationRequest.setInterval(5000);
         locationRequest.setFastestInterval(2000);
         locationRequest.setNumUpdates(1);
 
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
 
@@ -436,24 +288,27 @@ public class HomeFragment extends Fragment {
                 if (locationResult != null && locationResult.getLastLocation() != null) {
                     userLatitude = locationResult.getLastLocation().getLatitude();
                     userLongitude = locationResult.getLastLocation().getLongitude();
-                    Log.d("HomeFragment", "📍 Locație nouă obținută: Lat = " + userLatitude + ", Lng = " + userLongitude);
+                    Log.d("HomeFragment", "📍 Locație nouă: Lat = " + userLatitude + ", Lng = " + userLongitude);
 
-                    // Actualizăm adapterul cu locația corectă
-                    productAdapter = new ProductAdapter(fullProductList, userLatitude, userLongitude);
-                    recyclerView.setAdapter(productAdapter);
-                    productAdapter.notifyDataSetChanged();
+                    // Evităm crash dacă fragmentul nu este atașat
+                    if (getActivity() != null) {
+                        productAdapter = new ProductAdapter(fullProductList, userLatitude, userLongitude);
+                        recyclerView.setAdapter(productAdapter);
+                        productAdapter.notifyDataSetChanged();
+                    }
                 }
             }
         }, null);
     }
 
-
     private void getUserLocation() {
-        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+        if (getActivity() == null) return;
 
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-                ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
+        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(getActivity());
+
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
             return;
         }
 
@@ -464,24 +319,16 @@ public class HomeFragment extends Fragment {
                         userLongitude = location.getLongitude();
                         Log.d("HomeFragment", "✅ Locație utilizator: Lat = " + userLatitude + ", Lng = " + userLongitude);
 
-                        // IMPORTANT: Creăm un nou adapter cu locația corectă
-                        productAdapter = new ProductAdapter(fullProductList, userLatitude, userLongitude);
-                        recyclerView.setAdapter(productAdapter);
-
-                        // Reîncărcăm lista de produse după ce avem locația
-                        loadProductsFromFirestore();
+                        if (getActivity() != null) {
+                            productAdapter = new ProductAdapter(fullProductList, userLatitude, userLongitude);
+                            recyclerView.setAdapter(productAdapter);
+                        }
                     } else {
                         Log.e("HomeFragment", "⚠️ GPS dezactivat sau locație indisponibilă!");
-                        Toast.makeText(getContext(), "GPS dezactivat sau locație indisponibilă", Toast.LENGTH_SHORT).show();
-
-                        // Încercăm să obținem locația în mod activ (în unele dispozitive getLastLocation poate returna null)
                         requestNewLocationData();
                     }
                 })
-                .addOnFailureListener(e -> {
-                    Log.e("HomeFragment", "⚠️ Eroare la obținerea locației!", e);
-                    Toast.makeText(getContext(), "Eroare la obținerea locației: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e -> Log.e("HomeFragment", "⚠️ Eroare la obținerea locației!", e));
     }
 
 }

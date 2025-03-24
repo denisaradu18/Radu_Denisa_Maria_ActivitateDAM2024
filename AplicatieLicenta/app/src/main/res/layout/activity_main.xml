@@ -10,32 +10,28 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/frame_layout"/>
+        android:id="@+id/container"/>
 
     <com.google.android.material.bottomappbar.BottomAppBar
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/bottomAppBar"
         android:layout_gravity="bottom"
-        android:background="@color/green"
+        android:background="@color/white"
         app:fabCradleMargin="10dp"
         app:fabCradleRoundedCornerRadius="50dp"
         app:hideOnScroll="true">
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/bottomNavigationView"
-            app:itemIconTint="@color/green"
-            app:itemTextColor="@color/green"
-            app:backgroundTint="@color/white"
-            android:layout_gravity="bottom"
-            android:layout_marginEnd="20dp"
-            app:labelVisibilityMode="labeled"
-            android:background="@android:color/transparent"
-            app:menu="@menu/bottom_menu"/>
-
-    </com.google.android.material.bottomappbar.BottomAppBar>
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/bottomNavigationView"
+        app:itemIconTint="@color/green"
+        app:itemTextColor="@color/green"
+        app:backgroundTint="@color/white"
+    app:labelVisibilityMode="labeled"
+    app:menu="@menu/bottom_menu"/>
+</com.google.android.material.bottomappbar.BottomAppBar>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
@@ -43,10 +39,11 @@
         android:layout_height="wrap_content"
         android:src="@drawable/baseline_add_24"
         app:layout_anchor="@id/bottomAppBar"
-        app:maxImageSize="40dp"
-        app:tint ="@color/green"
-        android:contentDescription="@string/add_new_item"
-        android:tooltipText="@string/add_new_item_tooltip" />
+        app:backgroundTint="@color/green"
+    app:tint="@color/white"
+    app:maxImageSize="40dp"
+    android:contentDescription="@string/add_new_item"
+    android:tooltipText="@string/add_new_item_tooltip" />
 
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

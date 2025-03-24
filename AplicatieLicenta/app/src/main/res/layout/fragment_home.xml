@@ -4,81 +4,121 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:background="@android:color/white">
 
     <!-- Search Bar -->
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        app:cardCornerRadius="25dp"
-        app:cardElevation="4dp">
+        android:layout_height="60dp"
+        app:cardCornerRadius="30dp"
+        app:cardElevation="4dp"
+        android:layout_margin="12dp"
+        android:background="@android:color/white">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="horizontal"
-            android:padding="10dp"
-            android:gravity="center_vertical">
-
-            <EditText
-                android:id="@+id/search_bar"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:hint="Search"
-                android:background="@null"
-                android:paddingLeft="10dp"/>
+            android:gravity="center_vertical"
+            android:padding="10dp">
 
             <ImageView
                 android:id="@+id/search_icon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/magnify"
-                android:contentDescription="@string/search_icon" />
+                app:tint="@color/green"
+                android:contentDescription="Search icon"
+                android:layout_marginEnd="8dp"/>
 
+            <EditText
+                android:id="@+id/search_bar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Search free food..."
+                android:textSize="16sp"
+                android:background="@null"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Tabs: All, Food, Non-Food -->
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayout"
+    <!-- Categories (Scrollable) -->
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:tabIndicatorColor="@color/black"
-        app:tabSelectedTextColor="@color/black"
-        app:tabTextColor="@color/green"
-        app:tabGravity="fill"
-        app:tabMode="fixed">
+        android:scrollbars="none"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:layout_marginBottom="10dp">
 
-        <com.google.android.material.tabs.TabItem
-            android:id="@+id/tab_all"
-            android:text="All" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
-        <com.google.android.material.tabs.TabItem
-            android:id="@+id/tab_food"
-            android:text="Food"  />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_all"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="All"
+                android:textSize="14sp"
+                android:paddingHorizontal="16dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/green"
+                app:backgroundTint="@android:color/white"
+                android:textColor="@color/green"
+                android:layout_marginEnd="8dp"/>
 
-        <com.google.android.material.tabs.TabItem
-            android:id="@+id/tab_non_food"
-            android:text="Non-Food" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_food"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="Food"
+                android:textSize="14sp"
+                android:paddingHorizontal="16dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/green"
+                app:backgroundTint="@android:color/white"
+                android:textColor="@color/green"
+                android:layout_marginEnd="8dp"/>
 
-    </com.google.android.material.tabs.TabLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_non_food"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="Non-Food"
+                android:textSize="14sp"
+                android:paddingHorizontal="16dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/green"
+                app:backgroundTint="@android:color/white"
+                android:textColor="@color/green"
+                android:layout_marginEnd="8dp"/>
+        </LinearLayout>
+    </HorizontalScrollView>
 
-
-    <!-- Text Title -->
+    <!-- New Free Food Title -->
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Recommended for you"
-        android:textSize="16sp"
+        android:text="🍏 New Free Food"
+        android:textSize="20sp"
         android:textStyle="bold"
-        android:layout_marginTop="8dp"/>
+        android:textColor="@color/black"
+        android:gravity="center"
+        android:padding="8dp"/>
 
-    <!-- RecyclerView pentru produse -->
+    <!-- RecyclerView (Grid for Product Display) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:padding="8dp"
-        android:clipToPadding="false"/>
+        android:clipToPadding="false"
+        android:scrollbars="vertical"
+        android:numColumns="2"
+        android:contentDescription="List of available free food"/>
 </LinearLayout>

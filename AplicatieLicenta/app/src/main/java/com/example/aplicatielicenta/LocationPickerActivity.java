@@ -35,7 +35,6 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_location_picker);
 
-        // Inițializează FusedLocationProviderClient
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
         btnSelectLocation = findViewById(R.id.btn_select_location);
@@ -64,17 +63,14 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Activează hărțile pentru locația utilizatorului
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
 
-        // Mută harta la locația curentă
         getDeviceLocation();
 
-        // Setează listener pentru a selecta manual locația
         mMap.setOnMapClickListener(latLng -> {
             if (currentMarker != null) {
                 currentMarker.remove();
@@ -100,7 +96,6 @@ public class LocationPickerActivity extends AppCompatActivity implements OnMapRe
         }
     }
 
-    // Verifică permisiunile pentru locație
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);

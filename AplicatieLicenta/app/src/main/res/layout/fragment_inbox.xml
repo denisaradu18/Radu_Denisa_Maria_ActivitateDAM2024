@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".InboxFragment">
+    android:orientation="vertical">
 
-    <!-- TODO: Update blank fragment layout -->
     <TextView
+        android:id="@+id/empty_message"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Inbox Fragment"
+        android:layout_height="wrap_content"
+        android:text="No messages yet"
+        android:textSize="18sp"
+        android:textColor="@android:color/darker_gray"
         android:gravity="center"
-        android:textSize="30sp"
-        android:textColor="@color/green"/>
+        android:visibility="gone" />
 
-</FrameLayout>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/inboxRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</LinearLayout>

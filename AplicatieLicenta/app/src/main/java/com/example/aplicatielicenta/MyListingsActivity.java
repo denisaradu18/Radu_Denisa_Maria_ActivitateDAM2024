@@ -61,7 +61,7 @@ public class MyListingsActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
-        finish(); // Închide activitatea și revine la cea anterioară
+        finish();
         return true;
     }
 }

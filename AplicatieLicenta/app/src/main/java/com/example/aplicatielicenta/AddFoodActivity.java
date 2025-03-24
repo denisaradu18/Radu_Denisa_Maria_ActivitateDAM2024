@@ -77,17 +77,16 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
     private List<MaterialButton> quantityButtons = new ArrayList<>();
 
     private boolean imageLoaded = false;
-    private LatLng selectedLatLng = null; // Variabilă pentru locația selectată
+    private LatLng selectedLatLng = null;
 
-    private Uri selectedImageUri = null;
+    private List<Uri> selectedImages = new ArrayList<>();
+    private ImageAdapter imageAdapter;
 
-    // URL-ul API pentru încărcare în Cloudinary
+
     private static final String CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/du55ivt1v/image/upload";
 
     private static final String UPLOAD_PRESET = "Photos";
 
-    private List<Uri> selectedImages = new ArrayList<>();
-    private ImageAdapter imageAdapter;
     private FusedLocationProviderClient fusedLocationProviderClient;
 
 
@@ -101,13 +100,11 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         selectedImages = new ArrayList<>();
         imageAdapter = new ImageAdapter(this, selectedImages, this::removeImage);
 
-        // Configurăm RecyclerView
         binding.recyclerViewImages.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
         binding.recyclerViewImages.setAdapter(imageAdapter);
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
-        // Initialize back button
         binding.btnBack.setOnClickListener(v -> finish());
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -122,22 +119,17 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
             mapFragment.getMapAsync(this);
         }
 
-        // Initialize date picker for expiration date
         binding.etExpirationDate.setOnClickListener(v -> showDatePickerDialog());
 
-        // Setup camera/gallery functionality
         setupImageCapture();
 
 
-        // Setup Post button
 
         binding.btnSelectLocation.setOnClickListener(v -> {
             if (selectedLocation == null) {
-                // Deschide activitatea de selectare locație dacă nu ai deja o locație
                 Intent intent = new Intent(AddFoodActivity.this, LocationPickerActivity.class);
                 startActivityForResult(intent, REQUEST_LOCATION_PICKER);
             } else {
-                // Trimite locația înapoi dacă deja ai selectat-o
                 Intent resultIntent = new Intent();
                 resultIntent.putExtra("latitude", selectedLocation.latitude);
                 resultIntent.putExtra("longitude", selectedLocation.longitude);
@@ -151,20 +143,34 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
             validateAndPost();
         });
 
+        Spinner spinnerDays = findViewById(R.id.spinner_list_for_days);
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                this,
+                R.array.spinner_days_options,
+                android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerDays.setAdapter(adapter);
+
+        Spinner spinnerQuantity = findViewById(R.id.spinner_quantity);
+        ArrayAdapter<CharSequence> quantityAdapter = ArrayAdapter.createFromResource(
+                this,
+                R.array.quantity_options,
+                android.R.layout.simple_spinner_item);
+        quantityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerQuantity.setAdapter(quantityAdapter);
+
+
     }
 
     private void setupImageCapture() {
-        // Setup image selection from camera
-        binding.ivCamera.setOnClickListener(v -> showImageSelectionOptions());
-
-        // Setup FAB for adding photos
+        // Only use the FAB for adding photos
         binding.fabAddPhoto.setOnClickListener(v -> showImageSelectionOptions());
     }
 
     private void removeImage(int position) {
         if (position >= 0 && position < selectedImages.size()) {
             selectedImages.remove(position);
-            imageAdapter.notifyDataSetChanged(); // Actualizăm RecyclerView-ul după ștergere
+            imageAdapter.notifyDataSetChanged();
         }
     }
 
@@ -182,7 +188,6 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
                         Toast.makeText(this, "No camera app available", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    // Selectează din galerie
                     Intent intent = new Intent(Intent.ACTION_PICK);
                     intent.setType("image/*");
                     startActivityForResult(intent, REQUEST_PICK_IMAGE);
@@ -201,13 +206,12 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 AddFoodActivity.this,
                 (view, selectedYear, selectedMonth, selectedDay) -> {
-                    // Format date as mm/dd/yyyy
+
                     String date = String.format("%02d/%02d/%d", selectedMonth + 1, selectedDay, selectedYear);
                     binding.etExpirationDate.setText(date);
                 },
                 year, month, day);
 
-        // Set minimum date to today
         datePickerDialog.getDatePicker().setMinDate(calendar.getTimeInMillis());
         datePickerDialog.show();
     }
@@ -219,7 +223,6 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
 
         if (resultCode == RESULT_OK && data != null) {
 
-            // ✅ Dacă utilizatorul a selectat o locație
             if (requestCode == REQUEST_LOCATION_PICKER) {
                 double latitude = data.getDoubleExtra("latitude", 0.0);
                 double longitude = data.getDoubleExtra("longitude", 0.0);
@@ -239,34 +242,37 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
                 }
             }
 
-            // ✅ Dacă utilizatorul a selectat o imagine din galerie
             else if (requestCode == REQUEST_PICK_IMAGE) {
                 Uri imageUri = data.getData();
                 if (imageUri != null) {
-                    selectedImageUri = imageUri;
-                    binding.ivCamera.setImageURI(selectedImageUri);
+                    Log.d("DEBUG", "Galerie: imagine selectată - " + imageUri.toString());
+                    selectedImages.add(imageUri);
+                    imageAdapter.notifyDataSetChanged();
                 } else {
-                    Toast.makeText(this, "Failed to get image from gallery", Toast.LENGTH_SHORT).show();
+                    Log.e("ERROR", "Galerie: imaginea selectată este NULL");
+                    Toast.makeText(this, "Failed to load image from gallery", Toast.LENGTH_SHORT).show();
                 }
             }
 
-            // ✅ Dacă utilizatorul a făcut o fotografie cu camera
-            else if (requestCode == REQUEST_IMAGE_CAPTURE) {
-                if (data.getExtras() != null) {
-                    Bitmap imageBitmap = (Bitmap) data.getExtras().get("data");
-                    if (imageBitmap != null) {
-                        selectedImageUri = getImageUriFromBitmap(imageBitmap);
-                        if (selectedImageUri != null) {
-                            binding.ivCamera.setImageURI(selectedImageUri);
-                        } else {
-                            Toast.makeText(this, "Error converting image to URI", Toast.LENGTH_SHORT).show();
-                        }
+            if (data.getExtras() != null) {
+                Bitmap imageBitmap = (Bitmap) data.getExtras().get("data");
+                if (imageBitmap != null) {
+                    Uri imageUri = getImageUriFromBitmap(imageBitmap);
+                    if (imageUri != null) {
+                        selectedImages.add(imageUri);
+                        imageAdapter.notifyDataSetChanged();
+
+                        selectedImages.add(imageUri);
+                        imageAdapter.notifyDataSetChanged();
+
                     } else {
-                        Toast.makeText(this, "Failed to capture image", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Error converting image to URI", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    Toast.makeText(this, "Camera returned no data", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Failed to capture image", Toast.LENGTH_SHORT).show();
                 }
+            } else {
+                Toast.makeText(this, "Camera returned no data", Toast.LENGTH_SHORT).show();
             }
         } else {
             Toast.makeText(this, "Operation canceled or failed", Toast.LENGTH_SHORT).show();
@@ -274,7 +280,6 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
     }
 
 
-    // Convertim un Bitmap într-un URI pentru a-l putea salva
     private Uri getImageUriFromBitmap(Bitmap bitmap) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
@@ -292,7 +297,6 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        // Verifică permisiunea și obține locația curentă
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
 
@@ -304,7 +308,6 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
             });
         }
 
-        // Permite utilizatorului să selecteze o locație
         mMap.setOnMapClickListener(latLng -> {
             mMap.clear();
             mMap.addMarker(new MarkerOptions().position(latLng).title("Selected Location"));
@@ -323,45 +326,32 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         }
     }
 
-//    @Override
-//    public void onRequestPermissionsResult(int requestCode,
-//                                           @NonNull String[] permissions,
-//                                           @NonNull int[] grantResults) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-//        if (requestCode == REQUEST_LOCATION_PERMISSION) {
-//            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                enableMyLocation();
-//            } else {
-//                Toast.makeText(this, "Location permission denied", Toast.LENGTH_SHORT).show();
-//            }
-//        }
-//    }
-
     private void saveProductToFirestore(Map<String, Object> productData) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        db.collection("products")
-                .add(productData) // 🔥 Firebase generează automat un ID aici
-                .addOnSuccessListener(documentReference -> {
-                    // ✅ Obține ID-ul generat și actualizează documentul
-                    String productId = documentReference.getId();
-                    productData.put("id", productId);
+        // Generate the ID first
+        String productId = db.collection("products").document().getId();
 
-                    documentReference.update("id", productId)
-                            .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, "Product added successfully!", Toast.LENGTH_SHORT).show();
-                                finish(); // Închide activitatea după postare
-                            })
-                            .addOnFailureListener(e -> {
-                                Toast.makeText(this, "Failed to update product ID: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                            });
+        // Add the ID to the product data before writing
+        productData.put("id", productId);
+
+        // Always ensure imageUrl exists (required by your rules)
+        if (!productData.containsKey("imageUrl")) {
+            List<String> imageUrls = (List<String>) productData.get("imageUrls");
+            productData.put("imageUrl", imageUrls != null && !imageUrls.isEmpty() ? imageUrls.get(0) : "");
+        }
+
+        // Now create the document with a specific ID
+        db.collection("products").document(productId)
+                .set(productData)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Product added successfully!", Toast.LENGTH_SHORT).show();
+                    finish();
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Error adding product: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
-
-
 
     private void validateAndPost() {
         Log.d("DEBUG", "Intrat în validateAndPost()");
@@ -375,15 +365,23 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         }
         Log.d("DEBUG", "Utilizator autentificat: " + currentUser.getUid());
 
-
-        String userId = currentUser.getUid(); // Obține UID-ul utilizatorului curent
-
+        String userId = currentUser.getUid();
         String title = binding.etTitle.getText().toString().trim();
         String description = binding.etDescription.getText().toString().trim();
         String expirationDate = binding.etExpirationDate.getText().toString().trim();
         String pickupTimes = binding.etPickupTimes.getText().toString().trim();
         String pickupInstructions = binding.etPickupInstructions.getText().toString().trim();
         String category = "Food";
+        Spinner spinnerQuantity = findViewById(R.id.spinner_quantity);
+        String quantity = spinnerQuantity.getSelectedItem().toString();
+        if (quantity.equals("Select quantity")) {
+            Toast.makeText(this, "Please select a valid quantity", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Spinner spinnerDays = findViewById(R.id.spinner_list_for_days);
+        String listForDays = spinnerDays.getSelectedItem().toString();
+
 
         if (selectedLatLng == null) {
             Toast.makeText(this, "Please select a location on the map", Toast.LENGTH_SHORT).show();
@@ -395,7 +393,8 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
             return;
         }
 
-        // CORECTARE: Nu mai salvăm locația ca obiect separat, ci direct în document
+        ArrayList<String> imageUrls = new ArrayList<>();
+
         Map<String, Object> product = new HashMap<>();
         product.put("title", title);
         product.put("description", description);
@@ -403,45 +402,79 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
         product.put("pickupTimes", pickupTimes);
         product.put("pickupInstructions", pickupInstructions);
         product.put("category", category);
-        product.put("latitude", selectedLatLng.latitude);  // Salvăm direct latitudinea
-        product.put("longitude", selectedLatLng.longitude); // Salvăm direct longitudinea
-        product.put("userId", userId); // Salvăm UID-ul utilizatorului
+        product.put("latitude", selectedLatLng.latitude);
+        product.put("longitude", selectedLatLng.longitude);
+        product.put("userId", userId);
+        product.put("quantity", quantity);
+        product.put("listForDays", listForDays);
+        product.put("postedAt", com.google.firebase.Timestamp.now());
 
-        // Adăugăm imaginea dacă există
-        if (selectedImageUri != null) {
-            uploadImageToCloudinary(product);
+        product.put("imageUrls", imageUrls);
+
+        if (!selectedImages.isEmpty()) {
+            final int[] uploadedCount = {0};
+            final int totalImages = selectedImages.size();
+
+            Log.d("DEBUG", "Starting upload of " + totalImages + " images");
+
+            for (Uri imageUri : selectedImages) {
+                uploadImageToCloudinary(imageUri, new CloudinaryUploadCallback() {
+                    @Override
+                    public void onSuccess(String imageUrl) {
+                        Log.d("DEBUG", "Image uploaded successfully: " + imageUrl);
+
+                        imageUrls.add(imageUrl);
+                        uploadedCount[0]++;
+
+                        if (uploadedCount[0] == totalImages) {
+                            product.put("imageUrls", imageUrls);
+
+                            if (!imageUrls.isEmpty()) {
+                                product.put("imageUrl", imageUrls.get(0));
+                            }
+
+                            Log.d("DEBUG", "All images uploaded. Saving product with " + imageUrls.size() + " images");
+                            saveProductToFirestore(product);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(String errorMessage) {
+                        Log.e("ERROR", "Failed to upload image: " + errorMessage);
+                        uploadedCount[0]++;
+
+                        if (uploadedCount[0] == totalImages) {
+                            product.put("imageUrls", imageUrls);
+                            if (!imageUrls.isEmpty()) {
+                                product.put("imageUrl", imageUrls.get(0));
+                            }
+                            Log.d("DEBUG", "Some images failed to upload. Saving product with " + imageUrls.size() + " images");
+                            saveProductToFirestore(product);
+                        }
+                    }
+                });
+            }
         } else {
-            // Salvăm produsul fără imagine
+            Log.d("DEBUG", "No images to upload. Saving product.");
             saveProductToFirestore(product);
         }
     }
-
-    // Modificăm metodele pentru a lucra cu un singur Map
-
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1002) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission granted!", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Permission denied!", Toast.LENGTH_SHORT).show();
-            }
-        }
+    interface CloudinaryUploadCallback {
+        void onSuccess(String imageUrl);
+        void onFailure(String errorMessage);
     }
 
-    private void uploadImageToCloudinary(Map<String, Object> product) {
-        if (selectedImageUri == null) {
-            Log.e("ERROR", "selectedImageUri este null!");
+    private void uploadImageToCloudinary(Uri imageUri, CloudinaryUploadCallback callback) {
+        if (imageUri == null) {
+            callback.onFailure("Image URI is null");
             return;
         }
 
         Bitmap bitmap;
         try {
-            bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), selectedImageUri);
+            bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
         } catch (IOException e) {
-            Log.e("ERROR", "Eroare la conversia imaginii: " + e.getMessage());
+            callback.onFailure("Error converting image: " + e.getMessage());
             return;
         }
 
@@ -465,7 +498,7 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
             try {
                 Response response = client.newCall(request).execute();
                 if (!response.isSuccessful()) {
-                    Log.e("ERROR", "Eroare la încărcarea imaginii: " + response.message());
+                    runOnUiThread(() -> callback.onFailure("Error uploading image: " + response.message()));
                     return;
                 }
 
@@ -473,15 +506,26 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
                 JSONObject jsonObject = new JSONObject(responseBody);
                 String imageUrl = jsonObject.getString("secure_url");
 
-                Log.d("DEBUG", "Imagine încărcată cu succes: " + imageUrl);
-                product.put("imageUrl", imageUrl);
-
-                runOnUiThread(() -> saveProductToFirestore(product));
+                Log.d("DEBUG", "Image uploaded successfully: " + imageUrl);
+                runOnUiThread(() -> callback.onSuccess(imageUrl));
             } catch (Exception e) {
-                Log.e("ERROR", "Eroare la încărcarea imaginii: " + e.getMessage());
+                runOnUiThread(() -> callback.onFailure("Error uploading image: " + e.getMessage()));
             }
         }).start();
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 1002) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Permission granted!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Permission denied!", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
 
 }
+
