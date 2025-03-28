@@ -1,74 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="wrap_content"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="8dp">
+    android:layout_margin="8dp"
+    android:elevation="4dp"
+    android:foreground="?android:attr/selectableItemBackground"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp">
 
-    <!-- Container imagine produs -->
-    <FrameLayout
-        android:layout_width="100dp"
-        android:layout_height="100dp">
-
-        <ImageView
-            android:id="@+id/product_image"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:src="@drawable/placeholder_image"
-            android:contentDescription="Product Image"/>
-
-        <!-- Buton favorite (steluta) -->
-        <ImageButton
-            android:id="@+id/btn_favorite"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_gravity="top|end"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_star_border"
-            android:padding="4dp"
-            android:contentDescription="Favorite button" />
-    </FrameLayout>
-
-    <!-- Titlu produs -->
-    <TextView
-        android:id="@+id/product_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Product Title"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:paddingTop="4dp" />
-    <TextView
-        android:id="@+id/product_username"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Posted by: User"
-        android:textSize="12sp"
-        android:textStyle="italic"
-        android:textColor="@color/black"
-        android:paddingTop="2dp" />
-
-    <!-- Locația produsului -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:orientation="vertical"
+        android:padding="8dp">
 
-        <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:src="@drawable/ic_location_pin"
-            android:contentDescription="Location icon"/>
+        <!-- Imagine produs + buton favorite -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="140dp">
 
+            <ImageView
+                android:id="@+id/product_image"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:background="@drawable/rounded_bg"
+                android:contentDescription="Product Image" />
+
+            <ImageButton
+                android:id="@+id/btn_favorite"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="top|end"
+                android:layout_margin="6dp"
+                android:background="@android:color/transparent"
+                android:padding="4dp"
+                android:src="@drawable/ic_star_border"
+                android:contentDescription="Favorite button"
+                app:tint="@color/green" />
+        </FrameLayout>
+
+        <!-- Titlu produs -->
         <TextView
-            android:id="@+id/product_distance"
+            android:id="@+id/product_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cereale"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:paddingTop="6dp" />
+
+        <!-- Nume utilizator -->
+        <TextView
+            android:id="@+id/product_username"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Posted by: Anonim"
+            android:textSize="12sp"
+            android:textColor="#777777"
+            android:paddingTop="2dp" />
+
+        <!-- Locație -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=" "
-            android:textSize="12sp"
-            android:paddingStart="4dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingTop="2dp">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:src="@drawable/ic_location_pin"
+                android:contentDescription="Location icon"
+                app:tint="@color/green" />
+
+            <TextView
+                android:id="@+id/product_distance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1.2 km"
+                android:textSize="12sp"
+                android:paddingStart="4dp" />
+        </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</androidx.cardview.widget.CardView>

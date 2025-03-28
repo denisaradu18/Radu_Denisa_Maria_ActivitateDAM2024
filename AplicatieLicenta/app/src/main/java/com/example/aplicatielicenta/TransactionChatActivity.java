@@ -30,7 +30,6 @@ public class TransactionChatActivity extends AppCompatActivity {
     private Button sendButton;
     private TextView productNameTextView, otherUserNameTextView;
     private ImageView productImageView;
-
     private ChatAdapter chatAdapter;
     private List<MessageModel> messageList;
     private FirebaseFirestore db;
@@ -89,6 +88,22 @@ public class TransactionChatActivity extends AppCompatActivity {
                 Toast.makeText(this, "Nu poți trimite un mesaj gol!", Toast.LENGTH_SHORT).show();
             }
         });
+        markMessagesAsRead(transactionId);
+
+    }
+
+    private void markMessagesAsRead(String transactionId) {
+        db.collection("transactions")
+                .document(transactionId)
+                .collection("messages")
+                .whereEqualTo("receiverId", currentUserId)
+                .whereEqualTo("read", false)
+                .get()
+                .addOnSuccessListener(querySnapshots -> {
+                    for (DocumentSnapshot doc : querySnapshots) {
+                        doc.getReference().update("read", true);
+                    }
+                });
     }
 
     private void setupRecyclerView() {
@@ -172,7 +187,9 @@ public class TransactionChatActivity extends AppCompatActivity {
     }
 
     private void loadTransactionMessages() {
-        db.collection("transactions").document(transactionId).collection("messages")
+        db.collection("transactions")
+                .document(transactionId)
+                .collection("messages")
                 .orderBy("timestamp", Query.Direction.ASCENDING)
                 .addSnapshotListener((queryDocumentSnapshots, e) -> {
                     if (e != null) {
@@ -180,17 +197,27 @@ public class TransactionChatActivity extends AppCompatActivity {
                         return;
                     }
 
+
                     messageList.clear();
-                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
-                        MessageModel message = doc.toObject(MessageModel.class);
-                        if (message != null) {
-                            Log.d("TransactionChatActivity", "📨 Mesaj nou: " + message.getMessage());
-                            messageList.add(message);
+
+                    if (queryDocumentSnapshots != null) {
+                        for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                            MessageModel message = doc.toObject(MessageModel.class);
+                            if (message != null) {
+                                messageList.add(message);
+
+                                // Dacă mesajul este primit și necitit, marchează-l ca citit
+                                if (message.getReceiverId().equals(currentUserId) && !message.isRead()) {
+                                    doc.getReference().update("read", true);
+                                }
+                            }
                         }
+
+                        // 🔄 actualizează UI
+                        chatAdapter.notifyDataSetChanged();
+                        chatRecyclerView.scrollToPosition(messageList.size() - 1);
                     }
 
-                    chatAdapter.notifyDataSetChanged();
-                    chatRecyclerView.scrollToPosition(messageList.size() - 1);
                 });
     }
 
@@ -212,6 +239,8 @@ public class TransactionChatActivity extends AppCompatActivity {
                 .getId();
 
         MessageModel message = new MessageModel(senderId, receiverId, messageText, System.currentTimeMillis());
+        message.setIsRead(false); // ✅ AICI setezi că mesajul NU este citit
+
 
         db.collection("transactions")
                 .document(transactionId)
@@ -220,15 +249,48 @@ public class TransactionChatActivity extends AppCompatActivity {
                 .set(message)
                 .addOnSuccessListener(aVoid -> {
                     Log.d("TransactionChatActivity", "✅ Mesaj trimis cu succes!");
-                    messageInput.setText(""); // Șterge mesajul după trimitere
+                    messageInput.setText("");
 
-                    // Actualizează timestamp-ul tranzacției pentru a o aduce în față listei
                     updateTransactionTimestamp();
 
-                    // Trimite notificare push către destinatar
-                    sendNotificationToReceiver(receiverId, messageText);
+                    // 🔥 Verificăm dacă receiverId are token
+                    db.collection("users").document(receiverId)
+                            .get()
+                            .addOnSuccessListener(documentSnapshot -> {
+                                if (documentSnapshot.exists() && documentSnapshot.contains("fcmToken")) {
+                                    String receiverToken = documentSnapshot.getString("fcmToken");
+
+                                    Log.d("TransactionChatActivity", "🔔 Trimit notificare către token: " + receiverToken);
+
+                                    Map<String, Object> notification = new HashMap<>();
+                                    notification.put("token", receiverToken);
+                                    notification.put("message", messageText);
+                                    notification.put("senderId", senderId);
+                                    notification.put("transactionId", transactionId);
+                                    notification.put("timestamp", System.currentTimeMillis());
+                                    notification.put("processed", false);
+
+                                    db.collection("notifications")
+                                            .add(notification)
+                                            .addOnSuccessListener(docRef -> {
+                                                Log.d("TransactionChatActivity", "✅ Notificare salvată în Firestore.");
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                Log.e("TransactionChatActivity", "❌ Eroare la salvarea notificării", e);
+                                            });
+
+                                } else {
+                                    Log.e("TransactionChatActivity", "❌ Nu am găsit fcmToken pentru receiverId: " + receiverId);
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("TransactionChatActivity", "❌ Eroare la obținerea token-ului", e);
+                            });
+
                 })
-                .addOnFailureListener(e -> Log.e("TransactionChatActivity", "❌ Eroare la trimiterea mesajului", e));
+                .addOnFailureListener(e -> {
+                    Log.e("TransactionChatActivity", "❌ Eroare la trimiterea mesajului", e);
+                });
     }
 
     private void updateTransactionTimestamp() {

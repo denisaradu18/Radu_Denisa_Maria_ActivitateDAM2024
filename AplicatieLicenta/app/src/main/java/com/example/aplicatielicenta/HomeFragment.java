@@ -76,7 +76,7 @@ public class HomeFragment extends Fragment {
 
         recyclerView = view.findViewById(R.id.recyclerView);
         searchBar    = view.findViewById(R.id.search_bar);
-        searchIcon   = view.findViewById(R.id.search_icon);
+       // searchIcon   = view.findViewById(R.id.search_icon);
         btnAll = view.findViewById(R.id.btn_all);
         btnFood = view.findViewById(R.id.btn_food);
         btnNonFood = view.findViewById(R.id.btn_non_food);

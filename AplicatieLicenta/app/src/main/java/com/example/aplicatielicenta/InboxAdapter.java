@@ -50,7 +50,7 @@ public class InboxAdapter extends RecyclerView.Adapter<InboxAdapter.ViewHolder> 
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            productTitle = itemView.findViewById(R.id.productTitle);
+            productTitle = itemView.findViewById(R.id.productNameTextView);
         }
     }
 }

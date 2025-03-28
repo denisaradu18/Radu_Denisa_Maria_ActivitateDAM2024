@@ -1,71 +1,168 @@
 package com.example.aplicatielicenta;
 
-import android.content.Intent;
+import android.app.AlertDialog;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class FragmentInbox extends Fragment {
+
     private RecyclerView inboxRecyclerView;
-    private TextView emptyMessage;
-    private InboxAdapter inboxAdapter;
-    private List<TransactionModel> transactionsList;
+    private TextView emptyInboxText;
+    private TransactionsAdapter adapter;
+    private List<TransactionWithDetails> transactionsList;
+
     private FirebaseFirestore db;
+    private FirebaseAuth auth;
     private String currentUserId;
 
+    public FragmentInbox() {}
+
+    @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_inbox, container, false);
 
-        db = FirebaseFirestore.getInstance();
-        currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-
         inboxRecyclerView = view.findViewById(R.id.inboxRecyclerView);
-        emptyMessage = view.findViewById(R.id.empty_message);
+        emptyInboxText = view.findViewById(R.id.emptyInboxText);
+
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+        currentUserId = auth.getCurrentUser().getUid();
 
         transactionsList = new ArrayList<>();
-        inboxAdapter = new InboxAdapter(transactionsList, getContext());
+        adapter = new TransactionsAdapter(requireContext(), transactionsList, transaction -> {
+            // Deschide TransactionChatActivity
+            startActivity(TransactionUtils.openChatIntent(requireContext(), transaction));
+        });
 
         inboxRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        inboxRecyclerView.setAdapter(inboxAdapter);
+        inboxRecyclerView.setAdapter(adapter);
 
-        loadTransactions();
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getAdapterPosition();
+                TransactionWithDetails selectedTransaction = transactionsList.get(position);
+                String transactionId = selectedTransaction.getTransaction().getTransactionId();
+
+                new AlertDialog.Builder(requireContext())
+                        .setTitle("Șterge conversația?")
+                        .setMessage("Ești sigur că vrei să ștergi această conversație? Mesajele nu vor mai fi vizibile.")
+                        .setPositiveButton("Șterge", (dialog, which) -> {
+                            db.collection("transactions").document(transactionId)
+                                    .delete()
+                                    .addOnSuccessListener(unused -> {
+                                        transactionsList.remove(position);
+                                        adapter.notifyItemRemoved(position);
+                                        Log.d("InboxSwipe", "✅ Conversație ștearsă");
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        Log.e("InboxSwipe", "❌ Eroare la ștergere", e);
+                                        adapter.notifyItemChanged(position); // readaugă în UI dacă eșuează
+                                    });
+                        })
+                        .setNegativeButton("Anulează", (dialog, which) -> {
+                            adapter.notifyItemChanged(position); // readaugă în UI dacă utilizatorul renunță
+                        })
+                        .setCancelable(false)
+                        .show();
+            }
+
+        }).attachToRecyclerView(inboxRecyclerView);
+
+        loadInbox();
         return view;
     }
 
-    private void loadTransactions() {
+    private void loadInbox() {
         db.collection("transactions")
-                .whereEqualTo("senderId", currentUserId)
-                .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful() && task.getResult() != null) {
-                        transactionsList.clear();
-                        for (QueryDocumentSnapshot doc : task.getResult()) {
+                .whereArrayContains("participants", currentUserId)
+                .addSnapshotListener((querySnapshots, error) -> {
+                    if (error != null) {
+                        Log.e("FragmentInbox", "Eroare la încărcare conversații", error);
+                        return;
+                    }
+
+                    transactionsList.clear();
+
+                    if (querySnapshots != null) {
+                        for (DocumentSnapshot doc : querySnapshots) {
                             TransactionModel transaction = doc.toObject(TransactionModel.class);
-                            transactionsList.add(transaction);
+                            if (transaction != null) {
+                                boolean isUserBuyer = currentUserId.equals(transaction.getBuyerId());
+                                loadConversationDetails(transaction, isUserBuyer);
+                            }
                         }
-                        if (transactionsList.isEmpty()) {
-                            emptyMessage.setVisibility(View.VISIBLE);
-                        } else {
-                            emptyMessage.setVisibility(View.GONE);
-                        }
-                        inboxAdapter.notifyDataSetChanged();
                     }
                 });
+    }
+
+    private void loadConversationDetails(TransactionModel transaction, boolean isUserBuyer) {
+        db.collection("products").document(transaction.getProductId()).get().addOnSuccessListener(productDoc -> {
+            Product product = productDoc.toObject(Product.class);
+            String otherUserId = isUserBuyer ? transaction.getSellerId() : transaction.getBuyerId();
+
+            db.collection("users").document(otherUserId).get().addOnSuccessListener(userDoc -> {
+                String otherUserName = userDoc.getString("name");
+
+                db.collection("transactions").document(transaction.getTransactionId())
+                        .collection("messages")
+                        .orderBy("timestamp", Query.Direction.DESCENDING)
+                        .get()
+                        .addOnSuccessListener(messages -> {
+                            int unreadCount = 0;
+                            String lastMessage = "";
+                            long lastMessageTime = 0;
+
+                            for (DocumentSnapshot msgDoc : messages) {
+                                MessageModel msg = msgDoc.toObject(MessageModel.class);
+                                if (msg != null) {
+                                    if (lastMessage.isEmpty()) {
+                                        lastMessage = msg.getMessage();
+                                        lastMessageTime = msg.getTimestamp();
+                                    }
+                                    if (!msg.isRead() && msg.getReceiverId().equals(currentUserId)) {
+                                        unreadCount++;
+                                    }
+
+                                }
+                            }
+
+                            TransactionWithDetails transactionWithDetails = new TransactionWithDetails(
+                                    transaction, product, otherUserName, lastMessage,
+                                    lastMessageTime, isUserBuyer, unreadCount > 0, unreadCount
+                            );
+
+                            transactionsList.add(transactionWithDetails);
+                            transactionsList.sort((t1, t2) -> Long.compare(t2.getLastMessageTimestamp(), t1.getLastMessageTimestamp()));
+                            adapter.notifyDataSetChanged();
+                        });
+            });
+        });
     }
 }

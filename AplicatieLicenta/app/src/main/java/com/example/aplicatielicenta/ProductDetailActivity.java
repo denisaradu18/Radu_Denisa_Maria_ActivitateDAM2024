@@ -181,7 +181,7 @@ public class ProductDetailActivity extends AppCompatActivity {
 
         String transactionId = db.collection("transactions").document().getId();
 
-        // Create transaction
+        // Creează tranzacția
         Map<String, Object> transaction = new HashMap<>();
         transaction.put("transactionId", transactionId);
         transaction.put("buyerId", currentUserId);
@@ -189,6 +189,12 @@ public class ProductDetailActivity extends AppCompatActivity {
         transaction.put("productId", productId);
         transaction.put("timestamp", System.currentTimeMillis());
         transaction.put("status", "pending");
+
+        // 🔥 AICI e modificarea importantă:
+        List<String> participants = new ArrayList<>();
+        participants.add(currentUserId);
+        participants.add(productOwnerId);
+        transaction.put("participants", participants); // 🧠 adăugat în Firestore
 
         db.collection("transactions").document(transactionId)
                 .set(transaction)

@@ -37,7 +37,7 @@ android {
 }
 
 dependencies {
-
+    implementation ("com.google.firebase:firebase-messaging:23.1.2")
     implementation ("com.google.firebase:firebase-firestore:24.7.1")
     implementation ("com.squareup.okhttp3:okhttp:4.9.3")
     implementation ("com.github.bumptech.glide:glide:4.12.0")

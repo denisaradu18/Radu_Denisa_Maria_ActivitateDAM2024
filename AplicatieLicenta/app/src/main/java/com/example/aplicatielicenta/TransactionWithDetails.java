@@ -1,5 +1,8 @@
 package com.example.aplicatielicenta;
 
+import com.example.aplicatielicenta.Product;
+import com.example.aplicatielicenta.TransactionModel;
+
 public class TransactionWithDetails {
     private TransactionModel transaction;
     private Product product;
@@ -7,16 +10,21 @@ public class TransactionWithDetails {
     private String lastMessage;
     private long lastMessageTimestamp;
     private boolean isUserBuyer;
+    private boolean hasUnread;
+    private int unreadCount; // ✅ NOU
 
     public TransactionWithDetails(TransactionModel transaction, Product product,
                                   String otherUserName, String lastMessage,
-                                  long lastMessageTimestamp, boolean isUserBuyer) {
+                                  long lastMessageTimestamp, boolean isUserBuyer,
+                                  boolean hasUnread, int unreadCount) { // ✅ include și numărul
         this.transaction = transaction;
         this.product = product;
         this.otherUserName = otherUserName;
         this.lastMessage = lastMessage;
         this.lastMessageTimestamp = lastMessageTimestamp;
         this.isUserBuyer = isUserBuyer;
+        this.hasUnread = hasUnread;
+        this.unreadCount = unreadCount;
     }
 
     public TransactionModel getTransaction() {
@@ -41,5 +49,17 @@ public class TransactionWithDetails {
 
     public boolean isUserBuyer() {
         return isUserBuyer;
+    }
+
+    public boolean isHasUnread() {
+        return hasUnread;
+    }
+
+    public int getUnreadCount() {
+        return unreadCount;
+    }
+
+    public void setUnreadCount(int unreadCount) {
+        this.unreadCount = unreadCount;
     }
 }

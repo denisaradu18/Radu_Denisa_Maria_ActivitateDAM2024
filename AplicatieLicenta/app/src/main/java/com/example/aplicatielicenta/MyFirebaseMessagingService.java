@@ -19,9 +19,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         super.onMessageReceived(remoteMessage);
 
         if (remoteMessage.getNotification() != null) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
+            Log.d("FCM", "📬 Notificare primită: " + remoteMessage.getNotification().getBody());
         }
     }
+
 
     @Override
     public void onNewToken(String token) {

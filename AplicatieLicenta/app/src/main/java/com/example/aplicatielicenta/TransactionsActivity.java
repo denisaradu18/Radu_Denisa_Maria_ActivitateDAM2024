@@ -17,6 +17,7 @@ import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TransactionsActivity extends AppCompatActivity {
     private RecyclerView transactionsRecyclerView;
@@ -59,103 +60,96 @@ public class TransactionsActivity extends AppCompatActivity {
     }
 
     private void loadTransactions() {
-        // Obține toate tranzacțiile în care utilizatorul curent este implicat (ca buyer sau seller)
         db.collection("transactions")
-                .whereEqualTo("buyerId", currentUserId)
-                .orderBy("lastMessageTimestamp", Query.Direction.DESCENDING)
-                .get()
-                .addOnSuccessListener(buyerQueryDocumentSnapshots -> {
-                    for (DocumentSnapshot doc : buyerQueryDocumentSnapshots) {
-                        TransactionModel transaction = doc.toObject(TransactionModel.class);
-                        if (transaction != null) {
-                            loadTransactionDetails(transaction, true);
+                .whereArrayContains("participants", currentUserId) // 🔥 caută tranzacțiile unde userul e implicat
+                .addSnapshotListener((querySnapshots, e) -> {
+                    if (e != null) {
+                        Log.e("TransactionsActivity", "Eroare la ascultarea tranzacțiilor", e);
+                        return;
+                    }
+
+                    transactionsList.clear(); // 🧹 curățăm lista
+
+                    if (querySnapshots != null) {
+                        for (DocumentSnapshot doc : querySnapshots) {
+                            TransactionModel transaction = doc.toObject(TransactionModel.class);
+                            if (transaction != null) {
+                                boolean isUserBuyer = currentUserId.equals(transaction.getBuyerId());
+                                loadTransactionDetails(transaction, isUserBuyer);
+                            }
                         }
                     }
 
-                    // Continuă cu tranzacțiile în care utilizatorul este vânzător
-                    db.collection("transactions")
-                            .whereEqualTo("sellerId", currentUserId)
-                            .orderBy("lastMessageTimestamp", Query.Direction.DESCENDING)
-                            .get()
-                            .addOnSuccessListener(sellerQueryDocumentSnapshots -> {
-                                for (DocumentSnapshot doc : sellerQueryDocumentSnapshots) {
-                                    TransactionModel transaction = doc.toObject(TransactionModel.class);
-                                    if (transaction != null) {
-                                        loadTransactionDetails(transaction, false);
-                                    }
-                                }
-
-                                // Verifică dacă lista este goală
-                                if (transactionsList.isEmpty()) {
-                                    emptyStateTextView.setVisibility(View.VISIBLE);
-                                    transactionsRecyclerView.setVisibility(View.GONE);
-                                } else {
-                                    emptyStateTextView.setVisibility(View.GONE);
-                                    transactionsRecyclerView.setVisibility(View.VISIBLE);
-                                }
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("TransactionsActivity", "Error loading transactions", e);
+                    if (transactionsList.isEmpty()) {
+                        emptyStateTextView.setVisibility(View.VISIBLE);
+                        transactionsRecyclerView.setVisibility(View.GONE);
+                    } else {
+                        emptyStateTextView.setVisibility(View.GONE);
+                        transactionsRecyclerView.setVisibility(View.VISIBLE);
+                    }
                 });
     }
 
+    // Adauga in metoda loadTransactionDetails din TransactionsActivity
     private void loadTransactionDetails(TransactionModel transaction, boolean isUserBuyer) {
-        // Obține detaliile produsului
         db.collection("products").document(transaction.getProductId())
                 .get()
                 .addOnSuccessListener(productDoc -> {
                     if (productDoc.exists()) {
                         Product product = productDoc.toObject(Product.class);
-
-                        // Determină ID-ul celuilalt utilizator (vânzător sau cumpărător)
                         String otherUserId = isUserBuyer ? transaction.getSellerId() : transaction.getBuyerId();
 
-                        // Obține detaliile celuilalt utilizator
                         db.collection("users").document(otherUserId)
                                 .get()
                                 .addOnSuccessListener(userDoc -> {
                                     if (userDoc.exists()) {
                                         String otherUserName = userDoc.getString("name");
 
-                                        // Obține ultimul mesaj din tranzacție
                                         db.collection("transactions")
                                                 .document(transaction.getTransactionId())
                                                 .collection("messages")
                                                 .orderBy("timestamp", Query.Direction.DESCENDING)
-                                                .limit(1)
                                                 .get()
                                                 .addOnSuccessListener(messageQueryDocumentSnapshots -> {
                                                     String lastMessage = "";
                                                     long lastMessageTimestamp = transaction.getTimestamp();
 
+                                                    AtomicInteger unreadCount = new AtomicInteger(0);
+
                                                     if (!messageQueryDocumentSnapshots.isEmpty()) {
-                                                        MessageModel message = messageQueryDocumentSnapshots.getDocuments()
-                                                                .get(0).toObject(MessageModel.class);
-                                                        if (message != null) {
-                                                            lastMessage = message.getMessage();
-                                                            lastMessageTimestamp = message.getTimestamp();
+                                                        for (DocumentSnapshot messageDoc : messageQueryDocumentSnapshots) {
+                                                            MessageModel message = messageDoc.toObject(MessageModel.class);
+
+                                                            if (message != null) {
+                                                                if (lastMessage.isEmpty()) {
+                                                                    lastMessage = message.getMessage();
+                                                                    lastMessageTimestamp = message.getTimestamp();
+                                                                }
+
+                                                                if (!message.getSenderId().equals(currentUserId)
+                                                                        && !Boolean.TRUE.equals(messageDoc.getBoolean("read"))) {
+                                                                    unreadCount.incrementAndGet();
+                                                                }
+                                                            }
                                                         }
                                                     }
 
-                                                    // Creează un obiect TransactionWithDetails
                                                     TransactionWithDetails transactionWithDetails = new TransactionWithDetails(
                                                             transaction,
                                                             product,
                                                             otherUserName,
                                                             lastMessage,
                                                             lastMessageTimestamp,
-                                                            isUserBuyer
+                                                            isUserBuyer,
+                                                            unreadCount.get() > 0,
+                                                            unreadCount.get()
                                                     );
 
-                                                    // Adaugă la listă și actualizează adapter-ul
                                                     transactionsList.add(transactionWithDetails);
-                                                    // Sortează lista după timestamp-ul ultimului mesaj
                                                     transactionsList.sort((t1, t2) ->
                                                             Long.compare(t2.getLastMessageTimestamp(), t1.getLastMessageTimestamp()));
                                                     adapter.notifyDataSetChanged();
 
-                                                    // Verifică dacă lista este goală
                                                     if (transactionsList.isEmpty()) {
                                                         emptyStateTextView.setVisibility(View.VISIBLE);
                                                         transactionsRecyclerView.setVisibility(View.GONE);

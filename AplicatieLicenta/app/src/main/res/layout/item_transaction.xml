@@ -26,7 +26,7 @@
             tools:src="@tools:sample/avatars" />
 
         <TextView
-            android:id="@+id/productTitle"
+            android:id="@+id/productNameTextView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
@@ -50,7 +50,7 @@
             android:textSize="14sp"
             app:layout_constraintEnd_toStartOf="@+id/roleTextView"
             app:layout_constraintStart_toEndOf="@+id/productImageView"
-            app:layout_constraintTop_toBottomOf="@+id/productNameTextView"
+            app:layout_constraintTop_toBottomOf="@id/productNameTextView"
             tools:text="Nume Utilizator" />
 
         <TextView
@@ -63,9 +63,9 @@
             android:paddingEnd="6dp"
             android:paddingBottom="2dp"
             android:textSize="12sp"
-            app:layout_constraintBottom_toBottomOf="@+id/userNameTextView"
+            app:layout_constraintBottom_toBottomOf="@id/userNameTextView"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/userNameTextView"
+            app:layout_constraintTop_toTopOf="@id/userNameTextView"
             tools:text="Vânzător" />
 
         <TextView
@@ -79,7 +79,7 @@
             android:textSize="14sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/productImageView"
-            app:layout_constraintTop_toBottomOf="@+id/userNameTextView"
+            app:layout_constraintTop_toBottomOf="@id/userNameTextView"
             tools:text="Acesta este ultimul mesaj din conversație..." />
 
         <TextView
@@ -92,6 +92,18 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:text="12 Mar, 14:30" />
 
+        <!-- 🔴 Badge notificări necitite -->
+        <TextView
+            android:id="@+id/unreadBadge"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:background="@drawable/unread_badge_bg"
+            android:gravity="center"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            tools:text="2" />
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 </androidx.cardview.widget.CardView>

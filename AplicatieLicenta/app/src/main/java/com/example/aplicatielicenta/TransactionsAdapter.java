@@ -12,6 +12,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
+import android.graphics.Typeface;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -43,44 +45,57 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
     public void onBindViewHolder(@NonNull TransactionViewHolder holder, int position) {
         TransactionWithDetails transaction = transactionsList.get(position);
 
-        // Setează titlul produsului
         holder.productNameTextView.setText(transaction.getProduct().getTitle());
-
-        // Setează numele celuilalt utilizator
         holder.userNameTextView.setText(transaction.getOtherUserName());
 
-        // Setează rolul utilizatorului
-        if (transaction.isUserBuyer()) {
-            holder.roleTextView.setText("Cumpărător");
-        } else {
-            holder.roleTextView.setText("Vânzător");
-        }
-
-        // Setează ultimul mesaj
+        holder.roleTextView.setText(transaction.isUserBuyer() ? "Cumpărător" : "Vânzător");
         holder.lastMessageTextView.setText(transaction.getLastMessage());
 
-        // Setează data ultimului mesaj
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault());
         String formattedDate = dateFormat.format(new Date(transaction.getLastMessageTimestamp()));
         holder.timestampTextView.setText(formattedDate);
 
-        // Încarcă imaginea produsului
         if (transaction.getProduct().getImageUrls() != null && !transaction.getProduct().getImageUrls().isEmpty()) {
             Glide.with(context)
-                    .load(transaction.getProduct().getImageUrls())
+                    .load(transaction.getProduct().getImageUrls().get(0)) // ✅ asigură-te că iei primul URL
                     .centerCrop()
                     .into(holder.productImageView);
         } else {
-            // Setează o imagine placeholder dacă nu există imagine
             holder.productImageView.setImageResource(R.drawable.placeholder_image);
         }
 
-        // Setează listener pentru click
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
-                listener.onTransactionClick(transaction);
+                v.animate().alpha(0f).setDuration(150).withEndAction(() -> {
+                    listener.onTransactionClick(transaction);
+                    v.setAlpha(1f);
+                }).start();
             }
         });
+
+
+        // 🔴 Afișează badge pentru mesaje necitite
+        if (transaction.isHasUnread()) {
+            holder.lastMessageTextView.setTypeface(null, Typeface.BOLD);
+            holder.timestampTextView.setTypeface(null, Typeface.BOLD);
+            holder.unreadBadge.setVisibility(View.VISIBLE);
+        } else {
+            holder.lastMessageTextView.setTypeface(null, Typeface.NORMAL);
+            holder.timestampTextView.setTypeface(null, Typeface.NORMAL);
+            holder.unreadBadge.setVisibility(View.GONE);
+        }
+
+        if (transaction.getUnreadCount() > 0) {
+            holder.unreadBadge.setVisibility(View.VISIBLE);
+            holder.unreadBadge.setText(String.valueOf(transaction.getUnreadCount()));
+            holder.lastMessageTextView.setTypeface(null, Typeface.BOLD);
+            holder.timestampTextView.setTypeface(null, Typeface.BOLD);
+        } else {
+            holder.unreadBadge.setVisibility(View.GONE);
+            holder.lastMessageTextView.setTypeface(null, Typeface.NORMAL);
+            holder.timestampTextView.setTypeface(null, Typeface.NORMAL);
+        }
+
     }
 
     @Override
@@ -91,6 +106,7 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
     public static class TransactionViewHolder extends RecyclerView.ViewHolder {
         ImageView productImageView;
         TextView productNameTextView, userNameTextView, roleTextView, lastMessageTextView, timestampTextView;
+        TextView unreadBadge; // ✅ aici trebuie să fie
 
         public TransactionViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -100,6 +116,7 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
             roleTextView = itemView.findViewById(R.id.roleTextView);
             lastMessageTextView = itemView.findViewById(R.id.lastMessageTextView);
             timestampTextView = itemView.findViewById(R.id.timestampTextView);
+            unreadBadge = itemView.findViewById(R.id.unreadBadge); // ✅ corect aici
         }
     }
 }

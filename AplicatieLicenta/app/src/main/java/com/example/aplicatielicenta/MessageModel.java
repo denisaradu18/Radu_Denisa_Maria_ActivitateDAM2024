@@ -5,6 +5,7 @@ public class MessageModel {
     private String receiverId;
     private String message;
     private long timestamp;
+    private boolean isRead;
 
     public MessageModel() {}
 
@@ -13,6 +14,14 @@ public class MessageModel {
         this.receiverId = receiverId;
         this.message = message;
         this.timestamp = timestamp;
+    }
+
+    public boolean isRead() {
+        return isRead;
+    }
+
+    public void setIsRead(boolean isRead) {
+        this.isRead = isRead;
     }
 
     public String getSenderId() {
