@@ -1,90 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
+    android:layout_width="250dp"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    android:elevation="4dp"
-    android:foreground="?android:attr/selectableItemBackground"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="4dp">
+    app:cardCornerRadius="20dp"
+    app:cardElevation="6dp"
+    app:cardBackgroundColor="@color/white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:padding="12dp">
 
-        <!-- Imagine produs + buton favorite -->
-        <FrameLayout
+        <!-- Product Image -->
+        <ImageView
+            android:id="@+id/product_image"
             android:layout_width="match_parent"
-            android:layout_height="140dp">
+            android:layout_height="160dp"
+            android:scaleType="centerCrop"
+            android:background="@drawable/image_rounded"
+            android:contentDescription="Product image" />
 
-            <ImageView
-                android:id="@+id/product_image"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:background="@drawable/rounded_bg"
-                android:contentDescription="Product Image" />
-
-            <ImageButton
-                android:id="@+id/btn_favorite"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_gravity="top|end"
-                android:layout_margin="6dp"
-                android:background="@android:color/transparent"
-                android:padding="4dp"
-                android:src="@drawable/ic_star_border"
-                android:contentDescription="Favorite button"
-                app:tint="@color/green" />
-        </FrameLayout>
-
-        <!-- Titlu produs -->
+        <!-- Title -->
         <TextView
             android:id="@+id/product_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Cereale"
+            android:text="Product Title"
             android:textStyle="bold"
-            android:textSize="14sp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:paddingTop="6dp" />
+            android:textSize="16sp"
+            android:textColor="@color/textPrimary"
+            android:layout_marginTop="8dp" />
 
-        <!-- Nume utilizator -->
+        <!-- Username -->
         <TextView
             android:id="@+id/product_username"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Posted by: Anonim"
-            android:textSize="12sp"
-            android:textColor="#777777"
-            android:paddingTop="2dp" />
-
-        <!-- Locație -->
-        <LinearLayout
             android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Posted by: user"
+            android:textSize="14sp"
+            android:textColor="@color/textSecondary"
+            android:layout_marginTop="2dp" />
+
+        <!-- Distance + Favorite -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingTop="2dp">
-
-            <ImageView
-                android:layout_width="14dp"
-                android:layout_height="14dp"
-                android:src="@drawable/ic_location_pin"
-                android:contentDescription="Location icon"
-                app:tint="@color/green" />
+            android:layout_marginTop="8dp"
+            android:weightSum="3"> <!-- setăm un weightSum -->
 
             <TextView
                 android:id="@+id/product_distance"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="1.2 km"
-                android:textSize="12sp"
-                android:paddingStart="4dp" />
+                android:layout_weight="1"
+                android:textColor="@color/green"
+                android:textStyle="bold" />
+
+            <ImageButton
+                android:id="@+id/btn_favorite"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_star_border"
+                android:contentDescription="Add to favorites" />
+
+            <ImageButton
+                android:id="@+id/btn_edit"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Edit"
+                android:src="@drawable/ic_edit"
+                android:visibility="visible" /> <!-- default e ascuns -->
         </LinearLayout>
+
+
     </LinearLayout>
 </androidx.cardview.widget.CardView>

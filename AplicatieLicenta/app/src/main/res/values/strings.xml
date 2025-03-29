@@ -54,4 +54,9 @@
         <item>5+</item>
     </string-array>
 
+    <string name="avatar">User avatar</string>
+    <string name="search_hint">Search for products nearby...</string>
+    <string name="location_detecting">Detecting location...</string>
+
+
 </resources>

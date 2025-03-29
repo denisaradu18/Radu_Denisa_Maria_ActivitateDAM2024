@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -29,20 +29,23 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".TransactionsActivity"
+            android:name=".main.EditProductActivity"
             android:exported="false" />
         <activity
-            android:name=".TransactionChatActivity"
+            android:name=".transaction.TransactionsActivity"
             android:exported="false" />
         <activity
-            android:name=".ProductDetailActivity"
+            android:name=".transaction.TransactionChatActivity"
             android:exported="false" />
         <activity
-            android:name=".FavoritesActivity"
+            android:name=".product.ProductDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".main.FavoritesActivity"
             android:exported="false"
             android:theme="@style/Theme.AplicatieLicenta" />
         <activity
-            android:name=".MyListingsActivity"
+            android:name=".main.MyListingsActivity"
             android:exported="false"
             android:theme="@style/Theme.AplicatieLicenta" />
 
@@ -51,13 +54,13 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name=".AddNonFoodActivity"
+            android:name=".product.AddNonFoodActivity"
             android:exported="false" />
         <activity
-            android:name=".AddFoodActivity"
+            android:name=".product.AddFoodActivity"
             android:exported="false" />
         <activity
-            android:name=".LoginActivity"
+            android:name=".auth.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -66,17 +69,17 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".main.MainActivity"
             android:exported="false" />
         <activity
-            android:name=".SignupActivity"
+            android:name=".auth.SignupActivity"
             android:exported="true" />
         <activity
-            android:name=".LocationPickerActivity"
+            android:name=".product.LocationPickerActivity"
             android:exported="false" />
 
         <service
-            android:name=".MyFirebaseMessagingService"
+            android:name=".services.MyFirebaseMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
