@@ -1,0 +1,106 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include "Shared.h"
+#define LINE_SIZE 256
+
+void main()
+{
+	SNode* list = NULL;
+
+	FILE* pFile = fopen("Data.txt", "r");
+	if (pFile != NULL)
+	{
+		char delimiter[] = { ',','\0' };
+		char* token = NULL;
+		float income = 0; int group = 0;
+		char name[LINE_SIZE];
+		char buffer[LINE_SIZE];
+
+		while (fgets(buffer, LINE_SIZE, pFile))
+		{
+			token = strtok(buffer, delimiter);
+			strcpy(name, token);
+
+			token = strtok(NULL, delimiter);
+			group = atoi(token);
+
+			token = strtok(NULL, delimiter);
+			income = (float)atof(token);
+
+			Student* stud = createStudent(name, group, income);
+		
+			insertList(&list, stud);
+		}
+
+		//1.
+		//count the number of students from a certain group given as a parameter
+		int noStudents = 0;
+		int groupNo = 1066;
+		countStudents(list,groupNo, &noStudents);
+		printf("No. of students: %d\n", noStudents);
+		
+		//2.
+		//return the Student with the highest income
+		Student* stud = NULL;
+		findHighestIncome(list, &stud);
+		printStudent(stud);
+
+		//1. & 2.
+		//write the function to convert the list 
+		//into a circular simple linked list and
+		//display the content afterwards
+		transformaInCirculara(&list);
+		printf("\nAfisare lista circulara:\n");
+		afiseazaListaCirculara(list);
+
+
+	}
+
+}
+
+void transformaInCirculara(Node** head) {
+	if (*head != NULL) {
+		Node* aux = *head;
+
+		while (aux->next != NULL)
+			aux = aux->next;
+
+		aux->next = *head;
+	}
+}
+
+void afiseazaListaCirculara(Node* head) {
+	
+	Node* current = head;
+	do {
+		printStudent(current->info);
+		current = current->next;
+	} while (current != head);
+}
+
+
+void countStudents(Node* head, int groupNo, int* noStudents)
+{
+	int count = 0;
+	Node* curent = head;
+	while (curent != NULL)
+	{
+		if (curent->info->group == groupNo)
+			count++;
+		curent = curent->next;
+	}
+	*noStudents = count;
+}
+
+void findHighestIncome(Node* head, Student** stud)
+{
+	float maxIncome = head->info->income;
+	*stud = head->info;
+	Node* curent = head->next;
+	while (curent != NULL) {
+		if (curent->info->income > maxIncome) {
+			maxIncome = curent->info->income;
+			*stud = curent->info;
+		}
+		curent = curent->next;
+	}
+}
