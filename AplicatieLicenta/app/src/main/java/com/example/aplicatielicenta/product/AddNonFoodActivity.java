@@ -376,6 +376,7 @@ public class AddNonFoodActivity extends AppCompatActivity implements OnMapReadyC
             List<String> imageUrls = (List<String>) productData.get("imageUrls");
             productData.put("imageUrl", imageUrls != null && !imageUrls.isEmpty() ? imageUrls.get(0) : "");
         }
+        productData.put("isAvalable", true);
 
         db.collection("products").document(productId)
                 .set(productData)

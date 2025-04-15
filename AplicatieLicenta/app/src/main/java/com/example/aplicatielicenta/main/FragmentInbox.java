@@ -30,6 +30,7 @@ import java.util.List;
 
 public class FragmentInbox extends Fragment {
 
+    private static final String TAG = "FragmentInbox"; // Tag pentru logging
     private RecyclerView inboxRecyclerView;
     private TextView emptyInboxText;
     private TransactionsAdapter adapter;
@@ -45,24 +46,47 @@ public class FragmentInbox extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(com.example.aplicatielicenta.R.layout.fragment_inbox, container, false);
+        View view = inflater.inflate(R.layout.fragment_inbox, container, false);
 
-        inboxRecyclerView = view.findViewById(com.example.aplicatielicenta.R.id.inboxRecyclerView);
+        // Inițializare UI components
+        inboxRecyclerView = view.findViewById(R.id.inboxRecyclerView);
         emptyInboxText = view.findViewById(R.id.emptyInboxText);
 
+        // Inițializare Firebase
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
-        currentUserId = auth.getCurrentUser().getUid();
+        if (auth.getCurrentUser() == null) {
+            Log.e(TAG, "Utilizator neautentificat!");
+            emptyInboxText.setText("Trebuie să fii autentificat pentru a vedea conversațiile");
+            emptyInboxText.setVisibility(View.VISIBLE);
+            inboxRecyclerView.setVisibility(View.GONE);
+            return view;
+        }
 
+        currentUserId = auth.getCurrentUser().getUid();
+        Log.d(TAG, "User curent ID: " + currentUserId);
+
+        // Inițializare RecyclerView
         transactionsList = new ArrayList<>();
         adapter = new TransactionsAdapter(requireContext(), transactionsList, transaction -> {
-            // Deschide TransactionChatActivity
             startActivity(TransactionUtils.openChatIntent(requireContext(), transaction));
         });
 
         inboxRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         inboxRecyclerView.setAdapter(adapter);
 
+        emptyInboxText.setVisibility(View.VISIBLE);
+        inboxRecyclerView.setVisibility(View.GONE);
+
+
+        setupItemTouchHelper();
+
+        loadInbox();
+
+        return view;
+    }
+
+    private void setupItemTouchHelper() {
         new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
             @Override
             public boolean onMove(@NonNull RecyclerView recyclerView,
@@ -74,6 +98,11 @@ public class FragmentInbox extends Fragment {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int position = viewHolder.getAdapterPosition();
+                if (position == RecyclerView.NO_POSITION || position >= transactionsList.size()) {
+                    adapter.notifyDataSetChanged();
+                    return;
+                }
+
                 TransactionWithDetails selectedTransaction = transactionsList.get(position);
                 String transactionId = selectedTransaction.getTransaction().getTransactionId();
 
@@ -86,10 +115,11 @@ public class FragmentInbox extends Fragment {
                                     .addOnSuccessListener(unused -> {
                                         transactionsList.remove(position);
                                         adapter.notifyItemRemoved(position);
-                                        Log.d("InboxSwipe", "✅ Conversație ștearsă");
+                                        updateEmptyState();
+                                        Log.d(TAG, "✅ Conversație ștearsă");
                                     })
                                     .addOnFailureListener(e -> {
-                                        Log.e("InboxSwipe", "❌ Eroare la ștergere", e);
+                                        Log.e(TAG, "❌ Eroare la ștergere", e);
                                         adapter.notifyItemChanged(position); // readaugă în UI dacă eșuează
                                     });
                         })
@@ -99,78 +129,160 @@ public class FragmentInbox extends Fragment {
                         .setCancelable(false)
                         .show();
             }
-
         }).attachToRecyclerView(inboxRecyclerView);
-
-        loadInbox();
-        return view;
     }
 
     private void loadInbox() {
+        Log.d(TAG, "Începe încărcarea conversațiilor pentru utilizatorul: " + currentUserId);
+
         db.collection("transactions")
                 .whereArrayContains("participants", currentUserId)
                 .addSnapshotListener((querySnapshots, error) -> {
                     if (error != null) {
-                        Log.e("FragmentInbox", "Eroare la încărcare conversații", error);
+                        Log.e(TAG, "Eroare la încărcare conversații", error);
+                        emptyInboxText.setText("Eroare la încărcarea conversațiilor");
+                        emptyInboxText.setVisibility(View.VISIBLE);
+                        inboxRecyclerView.setVisibility(View.GONE);
                         return;
                     }
 
                     transactionsList.clear();
 
                     if (querySnapshots != null) {
-                        for (DocumentSnapshot doc : querySnapshots) {
-                            TransactionModel transaction = doc.toObject(TransactionModel.class);
-                            if (transaction != null) {
-                                boolean isUserBuyer = currentUserId.equals(transaction.getBuyerId());
-                                loadConversationDetails(transaction, isUserBuyer);
+                        Log.d(TAG, "Număr de documente primite: " + querySnapshots.size());
+
+                        if (!querySnapshots.isEmpty()) {
+                            for (DocumentSnapshot doc : querySnapshots) {
+                                TransactionModel transaction = doc.toObject(TransactionModel.class);
+                                if (transaction != null) {
+                                    Log.d(TAG, "Transaction găsită: " + transaction.getTransactionId());
+                                    // elimină temporar filtrarea cu hiddenFor sau status
+                                    boolean isUserBuyer = currentUserId.equals(transaction.getBuyerId());
+                                    loadConversationDetails(transaction, isUserBuyer);
+                                } else {
+                                    Log.w(TAG, "Document null de la Firestore: " + doc.getId());
+                                }
                             }
+                        } else {
+                            Log.d(TAG, "Nu există conversații pentru acest utilizator");
+                            updateEmptyState();
                         }
+                    } else {
+                        Log.w(TAG, "QuerySnapshot este null");
+                        updateEmptyState();
                     }
                 });
     }
 
     private void loadConversationDetails(TransactionModel transaction, boolean isUserBuyer) {
-        db.collection("products").document(transaction.getProductId()).get().addOnSuccessListener(productDoc -> {
-            Product product = productDoc.toObject(Product.class);
-            String otherUserId = isUserBuyer ? transaction.getSellerId() : transaction.getBuyerId();
+        Log.d(TAG, "Încărcare detalii pentru tranzacția: " + transaction.getTransactionId());
 
-            db.collection("users").document(otherUserId).get().addOnSuccessListener(userDoc -> {
-                String otherUserName = userDoc.getString("name");
+        // Produs
+        db.collection("products").document(transaction.getProductId()).get()
+                .addOnSuccessListener(productDoc -> {
+                    Product product = productDoc.toObject(Product.class);
+                    if (product == null) {
+                        Log.w(TAG, "Produsul nu a fost găsit: " + transaction.getProductId());
+                        product = new Product(); // Creează un obiect gol pentru a evita NullPointerException
+                        product.setTitle("Produs indisponibil");
+                    }
 
-                db.collection("transactions").document(transaction.getTransactionId())
-                        .collection("messages")
-                        .orderBy("timestamp", Query.Direction.DESCENDING)
-                        .get()
-                        .addOnSuccessListener(messages -> {
-                            int unreadCount = 0;
-                            String lastMessage = "";
-                            long lastMessageTime = 0;
+                    final Product finalProduct = product;
+                    String otherUserId = isUserBuyer ? transaction.getSellerId() : transaction.getBuyerId();
 
-                            for (DocumentSnapshot msgDoc : messages) {
-                                MessageModel msg = msgDoc.toObject(MessageModel.class);
-                                if (msg != null) {
-                                    if (lastMessage.isEmpty()) {
-                                        lastMessage = msg.getMessage();
-                                        lastMessageTime = msg.getTimestamp();
-                                    }
-                                    if (msg.getReceiverId().equals(currentUserId) && !msg.isRead()) {
-                                        unreadCount++;
-                                    }
-
-
+                    // Utilizator
+                    db.collection("users").document(otherUserId).get()
+                            .addOnSuccessListener(userDoc -> {
+                                String otherUserName = userDoc.getString("username");
+                                if (otherUserName == null || otherUserName.isEmpty()) {
+                                    otherUserName = "Utilizator necunoscut";
+                                    Log.w(TAG, "Nume utilizator negăsit pentru: " + otherUserId);
                                 }
-                            }
 
-                            TransactionWithDetails transactionWithDetails = new TransactionWithDetails(
-                                    transaction, product, otherUserName, lastMessage,
-                                    lastMessageTime, isUserBuyer, unreadCount > 0, unreadCount
-                            );
+                                final String finalOtherUserName = otherUserName;
 
-                            transactionsList.add(transactionWithDetails);
-                            transactionsList.sort((t1, t2) -> Long.compare(t2.getLastMessageTimestamp(), t1.getLastMessageTimestamp()));
-                            adapter.notifyDataSetChanged();
-                        });
-            });
-        });
+                                // Mesaje
+                                db.collection("transactions").document(transaction.getTransactionId())
+                                        .collection("messages")
+                                        .orderBy("timestamp", Query.Direction.DESCENDING)
+                                        .limit(20)
+                                        .get()
+                                        .addOnSuccessListener(messages -> {
+                                            int unreadCount = 0;
+                                            String lastMessage = "";
+                                            long lastMessageTime = 0;
+
+                                            if (!messages.isEmpty()) {
+                                                Log.d(TAG, "S-au găsit " + messages.size() + " mesaje pentru tranzacția " + transaction.getTransactionId());
+
+                                                for (DocumentSnapshot msgDoc : messages) {
+                                                    MessageModel msg = msgDoc.toObject(MessageModel.class);
+                                                    if (msg != null) {
+                                                        if (lastMessage.isEmpty()) {
+                                                            lastMessage = msg.getMessage();
+                                                            lastMessageTime = msg.getTimestamp();
+                                                        }
+                                                        if (msg.getReceiverId().equals(currentUserId) && !msg.isRead()) {
+                                                            unreadCount++;
+                                                        }
+                                                    }
+                                                }
+                                            } else {
+                                                Log.d(TAG, "Nu există mesaje pentru tranzacția " + transaction.getTransactionId());
+                                                lastMessage = "Conversație nouă";
+                                                lastMessageTime = transaction.getTimestamp();
+                                            }
+
+                                            TransactionWithDetails transactionWithDetails = new TransactionWithDetails(
+                                                    transaction, finalProduct, finalOtherUserName, lastMessage,
+                                                    lastMessageTime, isUserBuyer, unreadCount > 0, unreadCount
+                                            );
+
+                                            transactionsList.add(transactionWithDetails);
+                                            transactionsList.sort((t1, t2) ->
+                                                    Long.compare(t2.getLastMessageTimestamp(), t1.getLastMessageTimestamp()));
+
+                                            // Notifică adaptorul pe UI thread
+                                            if (getActivity() != null) {
+                                                getActivity().runOnUiThread(() -> {
+                                                    adapter.notifyDataSetChanged();
+                                                    updateEmptyState();
+                                                });
+                                            }
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            Log.e(TAG, "Eroare la încărcarea mesajelor", e);
+                                        });
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Eroare la încărcarea utilizatorului: " + otherUserId, e);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Eroare la încărcarea produsului: " + transaction.getProductId(), e);
+                });
+    }
+
+    private void updateEmptyState() {
+        if (transactionsList.isEmpty()) {
+            Log.d(TAG, "Lista de tranzacții este goală, afișez mesajul empty state");
+            emptyInboxText.setVisibility(View.VISIBLE);
+            inboxRecyclerView.setVisibility(View.GONE);
+        } else {
+            Log.d(TAG, "Lista de tranzacții conține " + transactionsList.size() + " elemente");
+            emptyInboxText.setVisibility(View.GONE);
+            inboxRecyclerView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Reîncarcă datele când fragmentul devine vizibil din nou
+        if (!transactionsList.isEmpty()) {
+            transactionsList.clear();
+            adapter.notifyDataSetChanged();
+            loadInbox();
+        }
     }
 }

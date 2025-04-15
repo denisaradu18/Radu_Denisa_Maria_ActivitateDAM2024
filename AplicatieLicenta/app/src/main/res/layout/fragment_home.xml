@@ -12,59 +12,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
-
-        <!-- Greeting Card -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardElevation="6dp"
-            app:cardCornerRadius="20dp"
-            app:cardBackgroundColor="@color/white"
-            android:layout_marginBottom="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:padding="16dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/tv_greeting"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Good morning, User"
-                        android:textStyle="bold"
-                        android:textSize="20sp"
-                        android:textColor="@color/textPrimary" />
-
-                    <TextView
-                        android:id="@+id/tv_location"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Detecting location..."
-                        android:textColor="@color/textSecondary"
-                        android:textSize="14sp"
-                        android:layout_marginTop="2dp" />
-                </LinearLayout>
-
-                <ImageView
-                    android:id="@+id/iv_profile"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:src="@drawable/ic_user_avatar"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/circle_background"
-                    android:padding="8dp"
-                    android:contentDescription="@string/avatar" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        <include
+            layout="@layout/toolbar_custom"
+            android:id="@+id/include_toolbar" />
 
         <!-- Search bar -->
         <androidx.cardview.widget.CardView

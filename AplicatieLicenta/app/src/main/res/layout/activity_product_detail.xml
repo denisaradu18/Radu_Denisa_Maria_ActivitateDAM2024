@@ -10,10 +10,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Top Bar -->
-
-        <!-- Product Image -->
-
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="50dp"
@@ -120,6 +116,17 @@
                 android:text="Location"
                 android:textSize="16sp"
                 android:layout_marginTop="4dp"/>
+
+            <TextView
+                android:id="@+id/availability_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Checking availability..."
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp"
+                android:textColor="@android:color/darker_gray"/>
+
         </LinearLayout>
 
         <!-- Request Button -->

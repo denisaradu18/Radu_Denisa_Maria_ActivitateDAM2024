@@ -1,7 +1,9 @@
 package com.example.aplicatielicenta.transaction;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -42,6 +44,8 @@ public class TransactionChatActivity extends AppCompatActivity {
     private TransactionModel transaction;
     private Product product;
     private String otherUserName;
+    private Button completeTransactionButton;
+    private boolean isUserSeller;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,14 +80,16 @@ public class TransactionChatActivity extends AppCompatActivity {
         productNameTextView = findViewById(R.id.productNameTextView);
         otherUserNameTextView = findViewById(R.id.otherUserNameTextView);
         productImageView = findViewById(R.id.productImageView);
+        completeTransactionButton = findViewById(R.id.completeTransactionButton);
 
-        // Configurare RecyclerView
+
         setupRecyclerView();
 
         // Încarcă datele tranzacției
         loadTransactionData();
+        completeTransactionButton.setOnClickListener(v -> completeTransaction());
 
-        // Trimitere mesaj la apăsarea butonului
+
         sendButton.setOnClickListener(v -> {
             String messageText = messageInput.getText().toString().trim();
             if (!messageText.isEmpty()) {
@@ -95,6 +101,7 @@ public class TransactionChatActivity extends AppCompatActivity {
         markMessagesAsRead(transactionId);
 
     }
+
 
     private void markMessagesAsRead(String transactionId) {
         db.collection("transactions")
@@ -128,10 +135,14 @@ public class TransactionChatActivity extends AppCompatActivity {
                         transaction = documentSnapshot.toObject(TransactionModel.class);
 
                         if (transaction != null) {
-                            // Determină cine este destinatarul (vânzătorul sau cumpărătorul)
-                            if (receiverId == null) {
-                                receiverId = currentUserId.equals(transaction.getBuyerId()) ?
-                                        transaction.getSellerId() : transaction.getBuyerId();
+                            isUserSeller = currentUserId.equals(transaction.getSellerId());
+
+                            // Show completion button only for the seller and only if status is "accepted"
+                            String status = transaction.getStatus();
+                            if (isUserSeller && "accepted".equals(status)) {
+                                completeTransactionButton.setVisibility(View.VISIBLE);
+                            } else {
+                                completeTransactionButton.setVisibility(View.GONE);
                             }
 
                             // Încarcă datele produsului
@@ -320,6 +331,44 @@ public class TransactionChatActivity extends AppCompatActivity {
                 });
     }
 
+    private void completeTransaction() {
+        new AlertDialog.Builder(this)
+                .setTitle("Complete Transaction")
+                .setMessage("Are you sure you want to mark this transaction as completed?")
+                .setPositiveButton("Yes", (dialog, which) -> {
+                    // Update transaction status to completed
+                    db.collection("transactions")
+                            .document(transactionId)
+                            .update("status", "completed",
+                                    "completedAt", System.currentTimeMillis())
+                            .addOnSuccessListener(unused -> {
+                                Toast.makeText(this, "Transaction completed!", Toast.LENGTH_SHORT).show();
+                                completeTransactionButton.setVisibility(View.GONE);
+
+                                // Send notification to buyer
+                                Map<String, Object> notification = new HashMap<>();
+                                notification.put("title", "Transaction Completed");
+                                notification.put("message", "The seller has marked your transaction as completed");
+                                notification.put("timestamp", System.currentTimeMillis());
+                                notification.put("type", "info");
+                                notification.put("fromUserId", currentUserId);
+                                notification.put("transactionId", transactionId);
+
+                                db.collection("users")
+                                        .document(transaction.getBuyerId())
+                                        .collection("notifications")
+                                        .add(notification);
+
+                                // You can add code here to update UI to reflect completed state
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Error completing transaction", Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .setNegativeButton("No", null)
+                .show();
+    }
+
     private void sendFCMNotification(String receiverToken, String messageText) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -337,5 +386,5 @@ public class TransactionChatActivity extends AppCompatActivity {
                 .addOnFailureListener(e ->
                         Log.e("TransactionChatActivity", "❌ Eroare la salvarea notificării", e));
     }
-
 }
+

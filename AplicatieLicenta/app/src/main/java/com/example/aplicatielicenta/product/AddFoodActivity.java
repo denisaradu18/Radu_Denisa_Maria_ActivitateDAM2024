@@ -331,6 +331,7 @@ public class AddFoodActivity extends AppCompatActivity implements OnMapReadyCall
             List<String> imageUrls = (List<String>) productData.get("imageUrls");
             productData.put("imageUrl", imageUrls != null && !imageUrls.isEmpty() ? imageUrls.get(0) : "");
         }
+        productData.put("isAvalable", true);
 
         // Now create the document with a specific ID
         db.collection("products").document(productId)

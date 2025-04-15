@@ -24,13 +24,9 @@ public class Product {
 
     private String imageUrl;
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
+    private boolean isAvailable;
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
+
 
     public Product() {
         this.imageUrls = new ArrayList<>();
@@ -87,6 +83,12 @@ public class Product {
         this.imageUrls = imageUrls != null ? imageUrls : new ArrayList<>();
         this.userId = userId;
     }
+    public boolean isAvailable() {
+        return isAvailable;
+    }
+    public void setAvailable(boolean available) {
+        isAvailable = available;
+    }
 
     public String getId() {
         return id;
@@ -124,10 +126,19 @@ public class Product {
         return pickupTimes;
     }
 
+
+
+
     public void setPickupTimes(String pickupTimes) {
         this.pickupTimes = pickupTimes;
     }
+    public String getImageUrl() {
+        return imageUrl;
+    }
 
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
     public String getPickupInstructions() {
         return pickupInstructions;
     }

@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".transaction.TransactionChatActivity">
 
-    <!-- Header cu informații despre tranzacție -->
+
     <androidx.cardview.widget.CardView
         android:id="@+id/headerCardView"
         android:layout_width="match_parent"
@@ -65,48 +65,69 @@
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
         android:clipToPadding="false"
-        app:layout_constraintBottom_toTopOf="@+id/messageInputLayout"
+        app:layout_constraintBottom_toTopOf="@+id/messageSectionLayout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/headerCardView" />
 
-    <!-- Layout pentru input mesaj -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/messageInputLayout"
+
+    <!-- Înlocuiește ConstraintLayout-ul cu id-ul messageInputLayout cu acest cod -->
+
+    <LinearLayout
+        android:id="@+id/messageSectionLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:background="#EFEFEF"
         android:padding="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
-        <EditText
-            android:id="@+id/messageInput"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:background="@android:color/white"
-            android:hint="Scrie un mesaj..."
-            android:inputType="textMultiLine"
-            android:maxLines="4"
-            android:minHeight="48dp"
-            android:padding="12dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/sendButton"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+        <!-- Input mesaj + Trimite -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
+            <EditText
+                android:id="@+id/messageInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:background="@android:color/white"
+                android:hint="Scrie un mesaj..."
+                android:inputType="textMultiLine"
+                android:maxLines="4"
+                android:minHeight="48dp"
+                android:padding="12dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/sendButton"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/sendButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Trimite"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/messageInput"
+                app:layout_constraintTop_toTopOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Buton finalizare tranzacție (vizibil doar pentru cumpărător) -->
         <Button
-            android:id="@+id/sendButton"
-            android:layout_width="wrap_content"
+            android:id="@+id/completeTransactionButton"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="Trimite"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/messageInput"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp"
+            android:background="@drawable/rounded_button"
+            android:text="Marchează tranzacția ca finalizată"
+            android:textColor="@color/white"
+            android:visibility="gone" />
+    </LinearLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

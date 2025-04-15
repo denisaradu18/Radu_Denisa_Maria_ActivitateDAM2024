@@ -44,7 +44,8 @@ public class FavoritesActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         productList = new ArrayList<>();
-        productAdapter = new ProductAdapter(productList);
+        productAdapter = new ProductAdapter(productList, 0.0, 0.0); // folosește coordonate dummy
+
         recyclerView.setAdapter(productAdapter);
 
         db = FirebaseFirestore.getInstance();

@@ -1,6 +1,7 @@
 package com.example.aplicatielicenta.main;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.example.aplicatielicenta.adapters.CustomInfoWindowAdapter;
+import com.example.aplicatielicenta.notification.NotificationActivity;
 import com.example.aplicatielicenta.product.ProductBottomSheet;
 import com.example.aplicatielicenta.R;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -43,9 +45,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MapFragment extends Fragment implements OnMapReadyCallback {
 
@@ -66,16 +70,25 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private ImageView cardImage;
     private TextView cardTitle, cardDescription;
     private Button cardButton;
+    private List<QueryDocumentSnapshot> allProducts = new ArrayList<>();
 
 
     public MapFragment() {
-        // Constructor gol necesar pentru fragment
+
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_map, container, false);
+        View toolbar = view.findViewById(R.id.include_toolbar);
+        ToolbarManager toolbarManager = new ToolbarManager(requireContext(), toolbar);
+        toolbarManager.hideGreeting();
+        toolbarManager.hideLocation();
+        toolbarManager.setNotificationClick(v -> {
+            Intent i = new Intent(requireContext(), NotificationActivity.class);
+            startActivity(i);
+        });
 
         ImageButton zoomIn = view.findViewById(R.id.zoom_in_button);
         ImageButton zoomOut = view.findViewById(R.id.zoom_out_button);
@@ -131,13 +144,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private List<Marker> markerList = new ArrayList<>();
 
     private void filterMarkers(String query) {
+        Log.d("FILTER", "🔍 Filtrare cu: " + query + " pe " + markerList.size() + " markeri");
         for (Marker marker : markerList) {
             String title = marker.getTitle() != null ? marker.getTitle().toLowerCase() : "";
             String snippet = marker.getSnippet() != null ? marker.getSnippet().toLowerCase() : "";
-            boolean visible = title.contains(query) || snippet.contains(query);
-            marker.setVisible(visible);
+            marker.setVisible(title.contains(query) || snippet.contains(query));
         }
     }
+
 
 
 
@@ -189,33 +203,47 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
     }
     private void loadProductsNear(double lat, double lng, double radiusKm) {
-        db.collection("products")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    mMap.clear();
-                    for (QueryDocumentSnapshot document : querySnapshot) {
-                        Double productLat = document.getDouble("latitude");
-                        Double productLng = document.getDouble("longitude");
+        mMap.clear();
+        markerList.clear();
 
-                        if (productLat != null && productLng != null) {
-                            float[] results = new float[1];
-                            Location.distanceBetween(lat, lng, productLat, productLng, results);
-                            float distanceInMeters = results[0];
-                            if (distanceInMeters <= radiusKm * 1000) {
-                                // Afișează marker
-                                LatLng position = new LatLng(productLat, productLng);
-                                MarkerOptions markerOptions = new MarkerOptions()
-                                        .position(position)
-                                        .title(document.getString("title"))
-                                        .snippet(document.getString("description"));
-                                Marker marker = mMap.addMarker(markerOptions);
-                                if (marker != null) {
-                                    marker.setTag(document.getId());
-                                }
-                            }
-                        }
+        for (QueryDocumentSnapshot document : allProducts) {
+            Double productLat = document.getDouble("latitude");
+            Double productLng = document.getDouble("longitude");
+
+            if (productLat != null && productLng != null) {
+                float[] results = new float[1];
+                Location.distanceBetween(lat, lng, productLat, productLng, results);
+                float distanceInMeters = results[0];
+
+                if (distanceInMeters <= radiusKm * 1000) {
+                    LatLng position = new LatLng(productLat, productLng);
+                    String title = document.getString("title");
+                    String description = document.getString("description");
+                    List<String> imageUrls = (List<String>) document.get("imageUrls");
+                    String firstImageUrl = (imageUrls != null && !imageUrls.isEmpty()) ? imageUrls.get(0) : "";
+
+                    MarkerOptions markerOptions = new MarkerOptions()
+                            .position(position)
+                            .title(title != null ? title : "No title")
+                            .snippet(description != null ? description : "No description");
+
+                    Marker marker = mMap.addMarker(markerOptions);
+                    if (marker != null) {
+                        marker.setTag(document.getId());
+                        markerList.add(marker);
+                        markerImageMap.put(marker.getId(), firstImageUrl);
                     }
-                });
+                }
+            }
+        }
+        View view = getView();
+        if (view != null) {
+            EditText searchInput = view.findViewById(R.id.search_input);
+            String query = searchInput.getText().toString().trim().toLowerCase();
+            if (!query.isEmpty()) {
+                filterMarkers(query);
+            }
+        }
     }
 
 
@@ -329,45 +357,34 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private void loadProductsFromFirestore() {
         db.collection("products")
                 .get()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        for (QueryDocumentSnapshot document : task.getResult()) {
-                            // Verificăm dacă produsul are locație validă
-                            Double latitude = document.getDouble("latitude");
-                            Double longitude = document.getDouble("longitude");
+                .addOnSuccessListener(querySnapshot -> {
+                    allProducts.clear();
 
-                            if (latitude != null && longitude != null) {
-                                String title = document.getString("title");
-                                String description = document.getString("description");
 
-                                // 🔽 Obținem prima imagine (dacă există)
-                                List<String> imageUrls = (List<String>) document.get("imageUrls");
-                                String firstImageUrl = (imageUrls != null && !imageUrls.isEmpty()) ?
-                                        imageUrls.get(0) : "";
+                    List<QueryDocumentSnapshot> rawProducts = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        rawProducts.add(doc);
+                    }
 
-                                LatLng productLocation = new LatLng(latitude, longitude);
+                    AtomicInteger processed = new AtomicInteger(0);
 
-                                // Creăm markerul
-                                MarkerOptions markerOptions = new MarkerOptions()
-                                        .position(productLocation)
-                                        .title(title != null ? title : "Produs fără titlu")
-                                        .snippet(description != null ? description : "Fără descriere")
-                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
+                    for (QueryDocumentSnapshot doc : rawProducts) {
+                        String productId = doc.getId();
 
-                                com.google.android.gms.maps.model.Marker marker = mMap.addMarker(markerOptions);
-                                if (marker != null) {
-                                    marker.setTag(document.getId());
-                                    markerList.add(marker); // ✅ pentru filtrare
-
-                                    // 🔥 ADĂUGĂM imaginea în map pentru InfoWindow
-                                    markerImageMap.put(marker.getId(), firstImageUrl);
-                                }
-                            }
-                        }
-
-                        Log.d(TAG, "Toate produsele au fost încărcate pe hartă.");
-                    } else {
-                        Log.e(TAG, "Eroare la încărcarea produselor: ", task.getException());
+                        db.collection("transactions")
+                                .whereEqualTo("productId", productId)
+                                .whereIn("status", Arrays.asList("pending", "accepted"))
+                                .get()
+                                .addOnSuccessListener(transSnap -> {
+                                    if (transSnap.isEmpty()) {
+                                        allProducts.add(doc); // ✅ doar dacă nu e în tranzacție
+                                    }
+                                    if (processed.incrementAndGet() == rawProducts.size()) {
+                                        Log.d(TAG, "✅ Produse disponibile: " + allProducts.size());
+                                        LatLng center = mMap.getCameraPosition().target;
+                                        loadProductsNear(center.latitude, center.longitude, 10);
+                                    }
+                                });
                     }
                 });
     }

@@ -1,6 +1,8 @@
 package com.example.aplicatielicenta.adapters;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,8 +15,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.aplicatielicenta.R;
 import com.example.aplicatielicenta.models.TransactionWithDetails;
+import com.example.aplicatielicenta.notification.NotificationActivity;
 
 import android.graphics.Typeface;
+import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -45,19 +49,17 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
 
     @Override
     public void onBindViewHolder(@NonNull TransactionViewHolder holder, int position) {
-        // Add null checks to prevent NullPointerException
+
         if (position < 0 || position >= transactionsList.size()) {
-            return; // Exit if position is out of bounds
+            return;
         }
 
         TransactionWithDetails transaction = transactionsList.get(position);
 
-        // Null checks for transaction and its components
         if (transaction == null) {
             return;
         }
 
-        // Null-safe setters
         if (holder.productNameTextView != null && transaction.getProduct() != null) {
             holder.productNameTextView.setText(transaction.getProduct().getTitle() != null
                     ? transaction.getProduct().getTitle()
@@ -80,7 +82,6 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
                     : "Nici un mesaj");
         }
 
-        // Safe timestamp formatting
         if (holder.timestampTextView != null) {
             try {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("dd MMM, HH:mm", Locale.getDefault());
@@ -91,7 +92,6 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
             }
         }
 
-        // Safe image loading
         if (holder.productImageView != null) {
             if (transaction.getProduct() != null
                     && transaction.getProduct().getImageUrls() != null
@@ -107,7 +107,6 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
             }
         }
 
-        // Click listener with null check
         if (listener != null) {
             holder.itemView.setOnClickListener(v -> {
                 v.animate().alpha(0f).setDuration(150).withEndAction(() -> {
@@ -133,6 +132,32 @@ public class TransactionsAdapter extends RecyclerView.Adapter<TransactionsAdapte
                 holder.unreadBadge.setVisibility(View.GONE);
             }
         }
+        holder.itemView.setOnClickListener(v -> {
+            String status = transaction.getTransaction().getStatus();
+            if ("pending".equals(status) && !transaction.isUserBuyer()) {
+                // Seller viewing pending transaction - prompt to go to notifications
+                new AlertDialog.Builder(context)
+                        .setTitle("Pending Request")
+                        .setMessage("This transaction is pending your approval. Check your notifications to accept or decline.")
+                        .setPositiveButton("Go to Notifications", (dialog, which) -> {
+                            Intent intent = new Intent(context, NotificationActivity.class);
+                            context.startActivity(intent);
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+            }
+            else if ("pending".equals(status) && transaction.isUserBuyer()) {
+                // Buyer viewing their own pending transaction
+                Toast.makeText(context, "Waiting for seller to accept your request", Toast.LENGTH_SHORT).show();
+            }
+            else if ("declined".equals(status)) {
+                Toast.makeText(context, "This transaction has been declined", Toast.LENGTH_SHORT).show();
+            }
+            else {
+                // For accepted or completed transactions, open the chat
+                listener.onTransactionClick(transaction);
+            }
+        });
     }
 
     @Override

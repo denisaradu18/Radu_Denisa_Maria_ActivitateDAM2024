@@ -1,5 +1,6 @@
 package com.example.aplicatielicenta.main;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
@@ -29,6 +30,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.aplicatielicenta.R;
 import com.example.aplicatielicenta.adapters.ProductAdapter;
 import com.example.aplicatielicenta.models.Product;
+import com.example.aplicatielicenta.notification.NotificationActivity;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.material.button.MaterialButton;
@@ -39,6 +41,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
@@ -48,7 +51,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class HomeFragment extends Fragment {
 
-    private TextView tvGreeting, tvLocation;
+
     private EditText searchBar;
     private Chip btnAll, btnFood, btnNonFood;
     private RecyclerView rvFood, rvNonFood;
@@ -66,8 +69,14 @@ public class HomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
-        tvGreeting = view.findViewById(R.id.tv_greeting);
-        tvLocation = view.findViewById(R.id.tv_location);
+        View toolbar = view.findViewById(R.id.include_toolbar);
+        ToolbarManager toolbarManager = new ToolbarManager(requireContext(), toolbar);
+        toolbarManager.initGreetingAndLocation(this);
+        toolbarManager.setNotificationClick(v -> {
+            Intent i = new Intent(requireContext(), NotificationActivity.class);
+            startActivity(i);
+        });
+
         searchBar = view.findViewById(R.id.search_bar);
         btnAll = view.findViewById(R.id.btn_all);
         btnFood = view.findViewById(R.id.btn_food);
@@ -85,7 +94,7 @@ public class HomeFragment extends Fragment {
         rvNonFood.setAdapter(nonFoodAdapter);
 
         requestLocationPermission();
-        loadUsername();
+
         loadProducts();
 
         setupSearch();
@@ -98,26 +107,7 @@ public class HomeFragment extends Fragment {
         return view;
     }
 
-    private void loadUsername() {
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        FirebaseFirestore.getInstance().collection("users")
-                .document(userId)
-                .get()
-                .addOnSuccessListener(doc -> {
-                    String username = doc.getString("username");
-                    updateGreeting(username != null ? username : "User");
-                });
-    }
 
-    private void updateGreeting(String username) {
-        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-        String greeting = (hour < 12) ? "Good morning" : (hour < 18) ? "Good afternoon" : "Good evening";
-        tvGreeting.setText(greeting + ", " + username);
-    }
-
-    private void updateLocationUI(String locationName) {
-        tvLocation.setText(locationName);
-    }
 
     private void setupSearch() {
         searchBar.addTextChangedListener(new TextWatcher() {
@@ -168,46 +158,65 @@ public class HomeFragment extends Fragment {
 
     private void loadProducts() {
         FirebaseFirestore.getInstance().collection("products")
+                .whereEqualTo("isAvailable", true)
                 .get()
                 .addOnSuccessListener(snapshot -> {
                     foodList.clear();
                     nonFoodList.clear();
 
-                    for (QueryDocumentSnapshot doc : snapshot) {
-                        Product p = doc.toObject(Product.class);
-                        Log.d("loadProducts", "Produs găsit: " + p.getTitle() + " cu categoria: '" + p.getCategory() + "'");
+                    AtomicInteger productsProcessed = new AtomicInteger(0);
+                    int totalProducts = snapshot.size();
 
-                        if (p.getCategory() != null) {
-                            String categoryLower = p.getCategory().trim().toLowerCase();
-
-                            if (categoryLower.equals("food")) {
-                                foodList.add(p);
-                            } else if (categoryLower.equals("nonfood") ||
-                                    categoryLower.equals("non-food")) {
-                                nonFoodList.add(p);
-                            }
-                        }
+                    if (totalProducts == 0) {
+                        updateAdapters();
+                        return;
                     }
 
-                    // Always check if the fragment is still attached to an activity
-                    if (isAdded() && getActivity() != null) {
-                        getActivity().runOnUiThread(() -> {
-                            foodAdapter.updateList(foodList);
-                            nonFoodAdapter.updateList(nonFoodList);
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        Product p = doc.toObject(Product.class);
+                        String productId = doc.getId();
 
-                            Log.d("loadProducts", "✅ Food: " + foodList.size() + " | Non-Food: " + nonFoodList.size());
-                        });
-                    } else {
-                        // Handle the case when the fragment is no longer attached
-                        Log.w("loadProducts", "Fragment not attached to Activity when data loaded");
+                        FirebaseFirestore.getInstance().collection("transactions")
+                                .whereEqualTo("productId", productId)
+                                .whereIn("status", Arrays.asList("pending", "accepted","completed"))
+                                .get()
+                                .addOnSuccessListener(transSnap -> {
+                                    if (transSnap.isEmpty()) {
+                                        if (p.getCategory() != null) {
+                                            String cat = p.getCategory().toLowerCase().trim();
+                                            if (cat.equals("food")) {
+                                                foodList.add(p);
+                                            } else if (cat.equals("nonfood") || cat.equals("non-food")) {
+                                                nonFoodList.add(p);
+                                            }
+                                        }
+                                    } else {
+                                        Log.d("loadProducts", "⛔ Produsul " + productId + " are tranzacții active");
+                                    }
 
-                        // Update lists without using UI thread
-                        foodAdapter.updateList(foodList);
-                        nonFoodAdapter.updateList(nonFoodList);
-                        Log.d("loadProducts", "✅ Food: " + foodList.size() + " | Non-Food: " + nonFoodList.size());
+                                    if (productsProcessed.incrementAndGet() == totalProducts) {
+                                        updateAdapters();
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e("loadProducts", "Eroare la verificarea tranzacțiilor", e);
+                                    if (productsProcessed.incrementAndGet() == totalProducts) {
+                                        updateAdapters();
+                                    }
+                                });
                     }
                 })
                 .addOnFailureListener(e -> Log.e("Firestore", "❌ Eroare la încărcare produse", e));
+    }
+
+    private void updateAdapters() {
+        if (isAdded() && getActivity() != null) {
+            getActivity().runOnUiThread(() -> {
+                foodAdapter.updateList(foodList);
+                nonFoodAdapter.updateList(nonFoodList);
+                Log.d("loadProducts", "✅ UI actualizat: food=" + foodList.size() + ", nonFood=" + nonFoodList.size());
+            });
+        }
     }
 
     private void requestLocationPermission() {
@@ -223,7 +232,7 @@ public class HomeFragment extends Fragment {
         FusedLocationProviderClient client = LocationServices.getFusedLocationProviderClient(requireActivity());
 
         if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            tvLocation.setText("Permission not granted");
+
             return;
         }
 
@@ -232,20 +241,12 @@ public class HomeFragment extends Fragment {
                 userLatitude = location.getLatitude();
                 userLongitude = location.getLongitude();
 
-                // 🟢 AICI ACTUALIZĂM ADAPTERELE CU LOCAȚIA
                 foodAdapter.setUserLocation(userLatitude, userLongitude);
                 nonFoodAdapter.setUserLocation(userLatitude, userLongitude);
 
                 if (isAdded()) {
                     Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
-                    try {
-                        List<Address> addresses = geocoder.getFromLocation(userLatitude, userLongitude, 1);
-                        if (!addresses.isEmpty()) {
-                            updateLocationUI(addresses.get(0).getSubLocality() + ", " + addresses.get(0).getLocality());
-                        }
-                    } catch (IOException e) {
-                        tvLocation.setText("Location not found");
-                    }
+
                 }
             }
         });

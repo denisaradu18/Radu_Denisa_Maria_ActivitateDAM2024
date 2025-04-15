@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -28,6 +29,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -76,8 +78,6 @@ public class ProductDetailActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
 
         showLoading(true);
-
-        // Get Product ID from Intent
         Intent intent = getIntent();
         productId = intent.getStringExtra("PRODUCT_ID");
 
@@ -89,7 +89,6 @@ public class ProductDetailActivity extends AppCompatActivity {
             finish();
         }
 
-        // Button Actions
         backIcon.setOnClickListener(v -> finish());
         favoriteIcon.setOnClickListener(v -> Toast.makeText(this, "Added to favorites", Toast.LENGTH_SHORT).show());
         reportIcon.setOnClickListener(v -> showReportDialog());
@@ -103,6 +102,8 @@ public class ProductDetailActivity extends AppCompatActivity {
                     if (documentSnapshot.exists()) {
                         Log.d(TAG, "Product data: " + documentSnapshot.getData());
                         displayProductData(documentSnapshot);
+                        checkProductAvailability();
+
                     } else {
                         Log.e(TAG, "Product not found: " + productId);
                         Toast.makeText(this, "Product not found", Toast.LENGTH_SHORT).show();
@@ -151,8 +152,6 @@ public class ProductDetailActivity extends AppCompatActivity {
         } else {
             addedDate.setText("Added date unknown");
         }
-
-        // Load location
         Double latitude = document.getDouble("latitude");
         Double longitude = document.getDouble("longitude");
         if (latitude != null && longitude != null) {
@@ -175,39 +174,89 @@ public class ProductDetailActivity extends AppCompatActivity {
         showLoading(false);
     }
 
+
     private void sendRequest() {
-        if (productOwnerId == null || productOwnerId.isEmpty()) {
-            Toast.makeText(this, "Error: Product owner unknown.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_request_details, null);
+        builder.setView(dialogView);
 
-        String transactionId = db.collection("transactions").document().getId();
+        EditText etPickupTimes = dialogView.findViewById(R.id.et_pickup_times);
+        EditText etMessage = dialogView.findViewById(R.id.et_message);
+        Button btnSend = dialogView.findViewById(R.id.btn_send_request);
 
-        // Creează tranzacția
-        Map<String, Object> transaction = new HashMap<>();
-        transaction.put("transactionId", transactionId);
-        transaction.put("buyerId", currentUserId);
-        transaction.put("sellerId", productOwnerId);
-        transaction.put("productId", productId);
-        transaction.put("timestamp", System.currentTimeMillis());
-        transaction.put("status", "pending");
+        AlertDialog dialog = builder.create();
+        dialog.show();
 
-        // 🔥 AICI e modificarea importantă:
-        List<String> participants = new ArrayList<>();
-        participants.add(currentUserId);
-        participants.add(productOwnerId);
-        transaction.put("participants", participants); // 🧠 adăugat în Firestore
+        btnSend.setOnClickListener(v -> {
+            String pickupTimes = etPickupTimes.getText().toString().trim();
+            String message = etMessage.getText().toString().trim();
 
-        db.collection("transactions").document(transactionId)
-                .set(transaction)
-                .addOnSuccessListener(aVoid -> {
-                    sendInitialMessage(transactionId);
-                    Toast.makeText(this, "Request sent!", Toast.LENGTH_SHORT).show();
-                    openChat(transactionId);
-                })
-                .addOnFailureListener(e -> Toast.makeText(this, "Request failed", Toast.LENGTH_SHORT).show());
+            if (pickupTimes.isEmpty()) {
+                Toast.makeText(this, "Please enter a pickup time.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String transactionId = db.collection("transactions").document().getId();
+            long timestamp = System.currentTimeMillis();
+
+            Map<String, Object> transaction = new HashMap<>();
+            transaction.put("transactionId", transactionId);
+            transaction.put("buyerId", currentUserId);
+            transaction.put("sellerId", productOwnerId);
+            transaction.put("productId", productId);
+            transaction.put("timestamp", timestamp);
+            transaction.put("status", "pending");
+            transaction.put("requestedPickupTime", pickupTimes);
+            transaction.put("initialMessage", message);
+
+
+            List<String> participants = new ArrayList<>();
+            participants.add(currentUserId);
+            participants.add(productOwnerId);
+            transaction.put("participants", participants);
+
+            db.collection("transactions").document(transactionId)
+                    .set(transaction).addOnSuccessListener(unused -> {
+                        db.collection("products")
+                                .document(productId)
+                                .update("isAvailable", false)
+                                .addOnSuccessListener(aVoid -> Log.d(TAG, "✅ Produsul a fost marcat ca indisponibil"))
+                                .addOnFailureListener(e -> Log.e(TAG, "❌ Eroare la actualizarea isAvailable", e));
+
+                        Map<String, Object> notification = new HashMap<>();
+                        notification.put("title", "New request received");
+                        notification.put("message", message);
+                        notification.put("pickupTime", pickupTimes);
+                        notification.put("timestamp", System.currentTimeMillis());
+                        notification.put("type", "request");
+                        notification.put("fromUserId", currentUserId);
+                        notification.put("toUserId", productOwnerId); // Add the missing toUserId field
+                        notification.put("transactionId", transactionId);
+
+                        // Add log to verify notification data
+                        Log.d(TAG, "📩 Creating notification: " + notification.toString());
+
+                        db.collection("users")
+                                .document(productOwnerId)
+                                .collection("notifications")
+                                .add(notification)
+                                .addOnSuccessListener(docRef -> {
+                                    Log.d(TAG, "📩 Notification saved successfully with ID: " + docRef.getId());
+                                    Toast.makeText(ProductDetailActivity.this, "Request sent!", Toast.LENGTH_SHORT).show();
+                                    dialog.dismiss();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "❌ Failed to save notification", e);
+                                    Toast.makeText(ProductDetailActivity.this, "Request sent but failed to notify seller", Toast.LENGTH_SHORT).show();
+                                    dialog.dismiss();
+                                });
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "❌ Failed to create transaction", e);
+                        Toast.makeText(ProductDetailActivity.this, "Failed to send request", Toast.LENGTH_SHORT).show();
+                    });
+        });
     }
-
     private void sendInitialMessage(String transactionId) {
         Map<String, Object> messageData = new HashMap<>();
         messageData.put("senderId", currentUserId);
@@ -256,6 +305,26 @@ public class ProductDetailActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         return "Unknown location";
+    }
+
+    private void checkProductAvailability() {
+        db.collection("transactions")
+                .whereEqualTo("productId", productId)
+                .whereIn("status", Arrays.asList("accepted", "pending", "completed"))
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    boolean isAvailable = querySnapshot.isEmpty();
+                    TextView availabilityText = findViewById(R.id.availability_text);
+                    availabilityText.setText(isAvailable ? "Available" : "Not Available");
+                    availabilityText.setTextColor(isAvailable ?
+                            getResources().getColor(R.color.green) :
+                            getResources().getColor(R.color.red));
+
+                    requestButton.setEnabled(isAvailable);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Eroare la verificarea disponibilității produsului", e);
+                });
     }
 
     private void showLoading(boolean isLoading) {

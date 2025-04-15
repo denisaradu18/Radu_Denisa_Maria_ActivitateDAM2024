@@ -4,14 +4,17 @@ import java.util.List;
 
 public class TransactionModel {
     private String transactionId;
-    private String buyerId;    // În loc de senderId
+    private String buyerId;
     private String sellerId;
     private String productId;
     private long timestamp;
     private List<String> participants;
     private String status;
     private long lastMessageTimestamp;
-    public TransactionModel() {} // Firestore needs an empty constructor
+
+    private String initialMessage;
+    private String requestedPickupTime;
+    public TransactionModel() {}
 
     public TransactionModel(String transactionId, String buyerId, String sellerId, String productId, long timestamp, List<String> participants, String status, long lastMessageTimestamp) {
         this.transactionId = transactionId;
@@ -34,6 +37,12 @@ public class TransactionModel {
     public List<String> getParticipants() {
         return participants;
     }
+
+    public String getInitialMessage() { return initialMessage; }
+    public void setInitialMessage(String initialMessage) { this.initialMessage = initialMessage; }
+
+    public String getRequestedPickupTime() { return requestedPickupTime; }
+    public void setRequestedPickupTime(String requestedPickupTime) { this.requestedPickupTime = requestedPickupTime; }
 
     public void setParticipants(List<String> participants) {
         this.participants = participants;

@@ -1,10 +1,13 @@
 package com.example.aplicatielicenta.transaction;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -45,6 +48,7 @@ public class TransactionsActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
         currentUserId = auth.getCurrentUser().getUid();
 
+
         // Inițializare UI
         transactionsRecyclerView = findViewById(R.id.transactionsRecyclerView);
         emptyStateTextView = findViewById(R.id.emptyStateTextView);
@@ -61,7 +65,6 @@ public class TransactionsActivity extends AppCompatActivity {
         transactionsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         transactionsRecyclerView.setAdapter(adapter);
 
-        // Încarcă tranzacțiile
         loadTransactions();
     }
 

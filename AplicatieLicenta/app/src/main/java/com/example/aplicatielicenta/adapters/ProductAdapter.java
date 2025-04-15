@@ -37,19 +37,21 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
     private String currentUserId;
 
+    private boolean isInactiveMode;
 
-    // Constructor normal
-    public ProductAdapter(List<Product> productList) {
-        this.productList = productList;
-        this.userLatitude = 0.0;
-        this.userLongitude = 0.0;
+
+    // Constructor pentru mod inactiv
+    public ProductAdapter(List<Product> productList, double userLatitude, double userLongitude, boolean isInactiveMode) {
+        this(productList, userLatitude, userLongitude);
+        this.isInactiveMode = isInactiveMode;
     }
 
+    // Constructor pentru mod normal
     public ProductAdapter(List<Product> productList, double userLatitude, double userLongitude) {
         this.productList = productList;
         this.userLatitude = userLatitude;
         this.userLongitude = userLongitude;
-        this.currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid(); // 🔐
+        this.currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
     }
 
 
@@ -207,6 +209,17 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
 
             v.getContext().startActivity(intent);
         });
+        if (isInactiveMode) {
+            // Stil vizual: opacitate redusă și text roșu
+            holder.itemView.setAlpha(0.5f);
+            holder.favoriteButton.setVisibility(View.GONE); // ascunde favorite
+            holder.editButton.setVisibility(View.GONE); // sau lasă-l dacă vrei să editeze
+
+            // Adaugă badge sau text
+            holder.usernameTextView.setText("Inactiv / Vândut");
+            holder.distanceTextView.setText("Indisponibil");
+        }
+
 
     }
 
